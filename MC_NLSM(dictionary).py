@@ -30,7 +30,7 @@ def make_coords(indices):
 
 def make_spins(N):
     """
-    Put random three-component unit spin vectors on every lattice coordinate per cube
+    Make a desired amount of random oriented 3-component unit spin vectors
     """
     spins = []
     for i in range(N):
@@ -40,7 +40,7 @@ def make_spins(N):
 
 def get_neighbors(indices,L):
     """
-    Give all neighbours of a cube based on the cube indices
+    Give all neighbours of a cube based on the cube indices, with PBC
     """
     i,j,k = indices
 
@@ -54,6 +54,9 @@ def get_neighbors(indices,L):
 
 #Now we build up all useful functions to set up our MC criteria 
 def spin_neighbours(coord, L):
+    """
+    Calculate the neighboring spins of a given coordinate with PBC
+    """
     x,y,z = coord
     neighbors = []
     
@@ -75,6 +78,9 @@ def spin_neighbours(coord, L):
 
 
 def gauge_pot(lat_coords, spinvalues, coordi, coordj):
+    """
+    Calculate the gauge potential between two spins, this formula was taken from A. Vishwanath, O.I. Motrunich (2004)
+    """
     ni, nj = np.array(spinvalues[lat_coords.index(coordi)]), np.array(spinvalues[lat_coords.index(coordj)])
     nref = np.array(vec())
 
@@ -88,6 +94,10 @@ def gauge_pot(lat_coords, spinvalues, coordi, coordj):
 
 
 def get_sides(indices):
+    """
+    Return a dictionary of all six sides of a cube with the respective coordinates as values
+    The coordinates are choosen such that the flux through the given side is pointing outwards
+    """
     i,j,k = indices
     sides = {}
     sides_coords = []
@@ -123,6 +133,9 @@ def get_sides(indices):
     
 
 def flux_side(lat_coords, spinvalues, side):
+    """
+    Calculate the flux through a given cube side
+    """
     flux = gauge_pot(lat_coords, spinvalues, side[-1], side[0])
 
     for spin in range(len(side)-1):
@@ -133,6 +146,10 @@ def flux_side(lat_coords, spinvalues, side):
 
 
 def flux_cube(lat_coords, spinvalues, indices):
+    """
+    Calculate the total flux through all six sides of a cube
+    The print-statement is temporarely there to check if the monopole number of a cube is an integer
+    """
     sides = get_sides(indices)
     flux = 0
 
@@ -146,10 +163,10 @@ def flux_cube(lat_coords, spinvalues, indices):
 #form lattice geometry using dictionaries
 def initial_lattice(L):
     """
-    Form a dictionary with keys of lattice coordinates and 3-component unit spin vectors as values
+    L represents the amount of cubes in each direction of our system (LxLxL)
+    From this we build a dictionary which gives indices (i,j,k) to each cube and belonging to each cube we build up the coordinates, spins and flux
 
-    There are 20 coordinates in one cube which is measured by length L, however for L > 2 we create
-    spins that are lying in multiple cubes at the same time.
+    
     """
     lattice = {}
     lat_coords = []
@@ -187,6 +204,9 @@ def initial_lattice(L):
 
 #For a given lattice we can calculate certain parameters of interest
 def energy(lattice, J):
+    """
+    Calculate the energy of the spin system by just adding the ferromagnetic coupling energy between all pairs
+    """
     lat_dic, lat_coords, spinvalues = lattice
     energy = 0
 
@@ -201,6 +221,9 @@ def energy(lattice, J):
 
 
 def magnetization(lattice):
+    """
+    Check the total magnetization of the spin system
+    """
     lat_dic, lat_coords, spinvalues = lattice
     V = len(lat_dic.keys())
     M = np.zeros(3)
@@ -212,6 +235,9 @@ def magnetization(lattice):
 
 
 def check_isolation(lattice, indices):
+    """
+    Check wether every monopole is accompanied by an equally strong anti-monopole
+    """
     lat_dic, lat_coords, spinvalues = lattice
     n_flux = 0
     checks = []
@@ -293,7 +319,7 @@ energies = []
 
 #Duration: 0:39:59.162780 for the above specifications
 
-#this will only calculate J=0
+#this will only calculate J=0, chance 1 to J_values for full calculations
 start_time = datetime.now()
 for J in range(1):
     E, m = MCS(L, J, n_steps)
