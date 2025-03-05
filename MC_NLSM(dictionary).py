@@ -49,39 +49,40 @@ def get_neighbors(indices,L):
         (i, j - 1, k), (i, j + 1, k),  # y neighbors
         (i, j, k - 1), (i, j, k + 1)   # z neighbors
         ]
-    return [(ni, nj, nk) for ni, nj, nk in neighbors if 0 <= ni < L and 0 <= nj < L and 0 <= nk < L]
+    return list(set([(ni%L, nj%L, nk%L) for ni, nj, nk in neighbors]))
 
 
 #Now we build up all useful functions to set up our MC criteria 
-def spin_neighbors(lat_coords, coord):
+def spin_neighbours(coord, L):
     x,y,z = coord
+    neighbors = []
     
-    if z != float:
-        neighbors = [(x,y,z+0.5), (x,y,z-0.5)]
-    if y != float:
-        neighbors = [(x,y+0.5,z), (x,y-0.5,z)]
-    if x != float:
-        neighbors = [(x+0.5,y,z), (x-0.5,y,z)]
+    if int(z) != z:
+        return [(x,y,z+0.5), (x,y,z-0.5)]
+    if int(y) != y:
+        return [(x,y+0.5,z), (x,y-0.5,z)]
+    if int(x) != x:
+        return [(x+0.5,y,z), (x-0.5,y,z)]
     
-    neighbors = [(x+0.5,y,z), (x-0.5,y,z), (x,y+0.5,z), 
-                 (x,y-0.5,z), (x,y,z-0.5), (x,y,z+0.5)]
-    
-    for n in neighbors:
-        if n not in lat_coords:
-            neighbors.remove(n)
+    neighbors += ([(x + 0.5,y,z), (x - 0.5,y,z)] if 0 < x < L else [(0,y,z), (x - 0.5,y,z)] if x == L else [(x + 0.5,y,z), (L,y,z)] if x == 0 else [])
+
+    neighbors += ([(x,y + 0.5,z), (x,y - 0.5,z)] if 0 < y < L else [(x,0,z), (x,y - 0.5,z)] if y == L else [(x,y + 0.5,z), (x,L,z)] if y == 0 else [])
+
+    neighbors += ([(x,y,z + 0.5), (x,y,z - 0.5)] if 0 < z < L else [(x,y,0), (x,y,z - 0.5)] if z == L else [(x,y,z + 0.5), (x,y,L)] if z == 0 else [])
 
     return neighbors
+    
 
 
 def gauge_pot(lat_coords, spinvalues, coordi, coordj):
     ni, nj = np.array(spinvalues[lat_coords.index(coordi)]), np.array(spinvalues[lat_coords.index(coordj)])
     nref = np.array(vec())
 
-    dot_product = np.dot(nref, ni) * np.dot(nref, nj) * np.dot(ni, nj)
+    dot_product = np.dot(nref, ni) + np.dot(nref, nj) + np.dot(ni, nj)
     cross_product = np.dot(nref, np.cross(ni, nj))
     
-    A_ij = np.angle((1 + dot_product + 1j * cross_product)/ 
-                    np.sqrt((1+np.dot(nref, ni)) * (1 + np.dot(nref, nj))* (1+np.dot(ni,nj))))
+    A_ij = np.angle((1 + dot_product + 1j *  cross_product) 
+                    / np.sqrt(2 * (1+np.dot(nref, ni)) * (1+np.dot(nref, nj)) * (1+np.dot(ni,nj)) ) )
     
     return A_ij
 
@@ -91,26 +92,32 @@ def get_sides(indices):
     sides = {}
     sides_coords = []
     
-    sides_coords += [(0+i, 0+j, 0+k), (0+i, 0.5+j, 0+k), (0+i, 1+j, 0+k), (0.5+i, 0+j, 0+k), 
-                (1+i, 0+k, 0+k), (1+i, 0.5+j, 0+k), (1+i, 1+j, 0+k), (0.5+i, 1+j, 0+k)]
+    #xy(z=0) vlak
+    sides_coords += [(0+i, 0+j, 0+k), (0+i, 0.5+j, 0+k), (0+i, 1+j, 0+k), (0.5+i, 1+j, 0+k),
+                     (1+i, 1+j, 0+k), (1+i, 0.5+j, 0+k), (1+i, 0+k, 0+k), (0.5+i, 0+j, 0+k)] 
     
+    #xy(z=1) vlak
     sides_coords += [(0+i, 0+j, 1+k), (0.5+i, 0+j, 1+k), (1+i, 0+j, 1+k), (1+i, 0.5+j, 1+k),
                  (1+i, 1+j, 1+k), (0.5+i, 1+j, 1+k), (0+i, 1+j, 1+k), (0+i, 0.5+j, 1+k)]
-    
+
+    #yz(x=0) vlak
     sides_coords += [(0+i, 0+j, 0+k), (0+i, 0+j, 0.5+k), (0+i, 0+j, 1+k), (0+i, 0.5+j, 1+k), 
                  (0+i, 1+j, 1+k), (0+i, 1+j, 0.5+k), (0+i, 1+j, 0+k), (0+i, 0.5+j, 0+k)]
     
+    #yz(x=1) vlak
     sides_coords += [(1+i, 0+j, 0+k), (1+i, 0.5+j, 0+k), (1+i, 1+j, 0+k), (1+i, 1+j, 0.5+k), 
                  (1+i, 1+j, 1+k), (1+i, 0.5+j, 1+k), (1+i, 0+j, 1+k), (1+i, 0+j, 0.5+k)]
     
+    #xz(y=0) vlak
     sides_coords += [(0+i, 0+j, 0+k), (0.5+i, 0+j, 0+k), (1+i, 0+j, 0+k), (1+i, 0+j, 0.5+k), 
                 (1+i, 0+j, 1+k), (0.5+i, 0+j, 1+k), (0+i, 0+j, 1+k), (0+i, 0+j, 0.5+k)]
     
+    #xz(y=1) vlak
     sides_coords += [(0+i, 1+j, 0+k), (0+i, 1+j, 0.5+k), (0+i, 1+j, 1+k), (0.5+i, 1+j, 1+k),
                  (1+i, 1+j, 1+k), (1+i, 1+j, 0.5+k), (1+i, 1+j, 0+k), (0.5+i, 1+j, 0+k)]
 
     for s in range(6):
-        sides.update({s+1: sides_coords[0+s:7+s]})
+        sides.update({s+1: sides_coords[0+(8*s):8+(8*s)]})
 
     return sides 
     
@@ -121,6 +128,7 @@ def flux_side(lat_coords, spinvalues, side):
     for spin in range(len(side)-1):
         flux += gauge_pot(lat_coords, spinvalues, side[spin], side[spin+1])
 
+    print(-np.pi<flux<=np.pi)
     return flux
 
 
@@ -131,6 +139,7 @@ def flux_cube(lat_coords, spinvalues, indices):
     for side in sides.values():
         flux += flux_side(lat_coords, spinvalues, side)
 
+    print('Monopole number equals:' flux/(2*np.pi))
     return flux
 
 
@@ -276,15 +285,17 @@ def MCS(L, J, n_steps):
 
 
 #Do simulations
-start_time = datetime.now()
-L = 2
-J_values = [0, 0.5, 1, 1.5, 2]
-n_steps = 500
-
+L = 3
+J_values = [0, 0.2, 0.4, 0.8, 1, 1.2, 1.4, 1.6]
+n_steps = 5000
 magnetizations = []
 energies = []
 
-for J in J_values:
+#Duration: 0:39:59.162780 for the above specifications
+
+#this will only calculate J=0
+start_time = datetime.now()
+for J in range(1):
     E, m = MCS(L, J, n_steps)
     energies += [E]
     magnetizations += [m]
