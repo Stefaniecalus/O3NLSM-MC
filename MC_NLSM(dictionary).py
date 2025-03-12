@@ -1,5 +1,7 @@
 #import packages
 import numpy as np
+import math
+import collections
 import random
 import matplotlib.pyplot as plt
 from datetime import datetime 
@@ -90,7 +92,7 @@ def gauge_pot(lat_coords, spinvalues, coordi, coordj):
     A_ij = np.angle((1 + dot_product + 1j *  cross_product) 
                     / np.sqrt(2 * (1+np.dot(nref, ni)) * (1+np.dot(nref, nj)) * (1+np.dot(ni,nj)) ) )
     
-    return A_ij
+    return A_ij%(2*np.pi)
 
 
 def get_sides(indices):
@@ -141,7 +143,7 @@ def flux_side(lat_coords, spinvalues, side):
     for spin in range(len(side)-1):
         flux += gauge_pot(lat_coords, spinvalues, side[spin], side[spin+1])
 
-    print(-np.pi<flux<=np.pi)
+    # return math.copysign(abs(flux)%(np.pi), flux) (maybe this is necessary to keep it between (-pi, pi])
     return flux
 
 
@@ -156,7 +158,6 @@ def flux_cube(lat_coords, spinvalues, indices):
     for side in sides.values():
         flux += flux_side(lat_coords, spinvalues, side)
 
-    print('Monopole number equals:' flux/(2*np.pi))
     return flux
 
 
@@ -165,8 +166,6 @@ def initial_lattice(L):
     """
     L represents the amount of cubes in each direction of our system (LxLxL)
     From this we build a dictionary which gives indices (i,j,k) to each cube and belonging to each cube we build up the coordinates, spins and flux
-
-    
     """
     lattice = {}
     lat_coords = []
@@ -211,7 +210,7 @@ def energy(lattice, J):
     energy = 0
 
     for coordinate in lat_coords:
-        neighbors = spin_neighbors(lat_coords, coordinate)
+        neighbors = spin_neighbours(coordinate, len(lat_dic)**(1/3))
 
         for neighbor in neighbors:
             energy += np.dot(coordinate, neighbor)
@@ -239,7 +238,7 @@ def check_isolation(lattice, indices):
     Check wether every monopole is accompanied by an equally strong anti-monopole
     """
     lat_dic, lat_coords, spinvalues = lattice
-    n_flux = 0
+    
     checks = []
     
     flux = flux_cube(lat_coords, spinvalues, indices)
@@ -247,6 +246,7 @@ def check_isolation(lattice, indices):
         neighbors = get_neighbors(indices, len(lat_dic)**(1/3))
 
         for neighbor in neighbors:
+            n_flux = 0
             n_flux += flux_cube(lat_coords, spinvalues, neighbor)
             checks += [flux-n_flux]
 
@@ -279,13 +279,15 @@ def metropolis_step(lattice, J):
         fluxes += [flux_cube(lat_coords, spinvalues, cube)]
         neighbors.append([get_neighbors(cube, len(lat_dic)**(1/3))])
     
-    for i in range(len(fluxes)):
-        if fluxes[i] != np.sum(neighbors[i]):
-            spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
-            for keys in lat_dic.keys():
-                coords, spins, _ = lat_dic[keys]
-                if flip_coords in coords:
-                    spins[coords.index(flip_coords)] *= -1
+        for f in range(len(fluxes)):
+            if check_isolation(lattice, cubes[f]) !=0:
+                checks, _ = check_isolation(lattice, cubes[f])
+                if collections.Counter(checks) != {fluxes[f]: len(checks)-1, 0:1} or collections.Counter(checks) != {0:1, fluxes[f]: len(checks)-1}:
+                    spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
+                    for keys in lat_dic.keys():
+                        coords, spins, _ = lat_dic[keys]
+                        if flip_coords in coords:
+                            spins[coords.index(flip_coords)] *= -1
 
 
     #if the first contraint is respected now calculate the probability of acception
@@ -312,16 +314,15 @@ def MCS(L, J, n_steps):
 
 #Do simulations
 L = 3
-J_values = [0, 0.2, 0.4, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 5000
+J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
+n_steps = 500
 magnetizations = []
 energies = []
 
-#Duration: 0:39:59.162780 for the above specifications
 
 #this will only calculate J=0, chance 1 to J_values for full calculations
 start_time = datetime.now()
-for J in range(1):
+for J in J_values:
     E, m = MCS(L, J, n_steps)
     energies += [E]
     magnetizations += [m]
