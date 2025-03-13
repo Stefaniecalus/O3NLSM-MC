@@ -21,10 +21,10 @@ def test_A(ni, nj, nref):
 
 #test cube 
 side_1 = {1: [[(0,0,0), (0,0.5,0), (0,1,0), (0.5,1,0), (1,1,0), (1,0.5,0), (1,0,0), (0.5,0,0)], 
-              [(-1/np.sqrt(3), -1/np.sqrt(3), -1/np.sqrt(3)), (-1/np.sqrt(2), 0, -1/np.sqrt(2)), 
+              [(-1/np.sqrt(3), -1/np.sqrt(3), -1/np.sqrt(3)), ( -1/np.sqrt(2), 0, -1/np.sqrt(2)), 
                (-1/np.sqrt(3), 1/np.sqrt(3), -1/np.sqrt(3)), (0, 1/np.sqrt(2), -1/np.sqrt(2)), 
                (1/np.sqrt(3), 1/np.sqrt(3), -1/np.sqrt(3)), (1/np.sqrt(2), 0, -1/np.sqrt(2)), 
-               (1/np.sqrt(3), -1/np.sqrt(3), -1/np.sqrt(3)), (-1/np.sqrt(2), 0, -1/np.sqrt(2))]]}     
+               (1/np.sqrt(3), -1/np.sqrt(3), -1/np.sqrt(3)), (0, -1/np.sqrt(2), -1/np.sqrt(2))]]}     
     
 side_2 = {2: [[(0,0,1), (0.5,0,1), (1,0,1), (1,0.5,1), (1,1,1), (0.5,1,1), (0,1,1), (0,0.5,1)], 
               [(-1/np.sqrt(3), -1/np.sqrt(3), 1/np.sqrt(3)), (0, -1/np.sqrt(2), 1/np.sqrt(2)), 
