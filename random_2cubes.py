@@ -59,6 +59,17 @@ def gauge_pot(lat_coords, spinvalues, coordi, coordj, nref):
     
     return A_ij
 
+def flux_side(lat_coords, spinvalues, side):
+    """
+    Calculate the flux through a given cube side
+    """
+    flux = gauge_pot(lat_coords, spinvalues, side[-1], side[0], nref)
+
+    for spin in range(len(side)-1):
+        flux += gauge_pot(lat_coords, spinvalues, side[spin], side[spin+1], nref)
+
+    return center(flux)
+
 def get_sides(indices):
     """
     Return a dictionary of all six sides of a cube with the respective coordinates as values
@@ -151,6 +162,9 @@ for side in sides000:
     A000.append(a)
     
 print(Flux000, np.sum(Flux000)/(2*np.pi))
+for i in range(1,7):
+    print(flux_side(lat_coords, spinvalues, sides000[i]))
+
 
 Flux010 = []
 A010 = []
@@ -172,6 +186,8 @@ for side in sides010:
     A010.append(a)
     
 print(Flux010, np.sum(Flux010)/(2*np.pi))
+for i in range(1,7):
+    print(flux_side(lat_coords, spinvalues, sides010[i]))
 
 
 #Now review the overlapping spins, fluxes and gauge potentials: side_6 for 000 and side_5 for 010
