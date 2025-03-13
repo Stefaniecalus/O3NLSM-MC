@@ -18,6 +18,10 @@ def vec():
     phi = 2* np.pi * random.random()
     return (np.sin(theta)*np.cos(phi), np.sin(theta)*np.sin(phi), np.cos(theta)) 
 
+def center(x):
+    return (x % (2*np.pi)) - (2*np.pi)*((x % (2*np.pi)) // (((2*np.pi) + 1)//2))
+
+
 def make_coords(indices):
     """
     Determine the spin coordinates based on cube indices
@@ -143,8 +147,7 @@ def flux_side(lat_coords, spinvalues, side):
     for spin in range(len(side)-1):
         flux += gauge_pot(lat_coords, spinvalues, side[spin], side[spin+1])
 
-    # return math.copysign(abs(flux)%(np.pi), flux) (maybe this is necessary to keep it between (-pi, pi])
-    return flux
+    return center(flux)
 
 
 def flux_cube(lat_coords, spinvalues, indices):
