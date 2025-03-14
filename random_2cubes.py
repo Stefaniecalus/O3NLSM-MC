@@ -81,7 +81,7 @@ def get_sides(indices):
     
     #xy(z=0) vlak
     sides_coords += [(0+i, 0+j, 0+k), (0+i, 0.5+j, 0+k), (0+i, 1+j, 0+k), (0.5+i, 1+j, 0+k),
-                     (1+i, 1+j, 0+k), (1+i, 0.5+j, 0+k), (1+i, 0+k, 0+k), (0.5+i, 0+j, 0+k)] 
+                     (1+i, 1+j, 0+k), (1+i, 0.5+j, 0+k), (1+i, 0+j, 0+k), (0.5+i, 0+j, 0+k)] 
     
     #xy(z=1) vlak
     sides_coords += [(0+i, 0+j, 1+k), (0.5+i, 0+j, 1+k), (1+i, 0+j, 1+k), (1+i, 0.5+j, 1+k),
