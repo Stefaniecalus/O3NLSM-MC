@@ -241,67 +241,71 @@ def check_isolation(lattice, indices, nref):
     Check wether every monopole is accompanied by an equally strong anti-monopole
     """
     lat_dic, lat_coords, spinvalues = lattice
-    
-    checks = []
-    
     flux = flux_cube(lat_coords, spinvalues, indices, nref)
-    if flux != 0:
+    n_flux = []
+    
+    if flux > 1e-6:
         neighbors = get_neighbors(indices, len(lat_dic)**(1/3))
-
         for neighbor in neighbors:
-            n_flux = flux_cube(lat_coords, spinvalues, neighbor, nref)
-            checks += [flux-n_flux]
+            n_flux += [flux_cube(lat_coords, spinvalues, neighbor, nref)] 
+     
+    
+    return -flux in n_flux and np.sum(n_flux)==-flux
 
-        return  checks, neighbors
-    return None 
+
+def flip_dic(lat_dic, flipcoord):
+    for keys in lat_dic.keys():
+            coords, spins, _ = lat_dic[keys]
+            if flipcoord in coords:
+                spins[coords.index(flipcoord)] *= -1
+    
+
+def flip_values(lat_coords, spinvalues, flipcoord):
+    index = lat_coords.index(flipcoord)
+    spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
+
+    
+def get_cubes(lat_dic, flipcoord):
+    cubes =[]
+    for keys in lat_dic.keys():
+        coords, spins, _ = lat_dic[keys]
+        if flipcoord in coords:
+            cubes += [keys]
+    return cubes
 
 
+#Now we set up the Metropolis step algorithm for our MCS
 #Now we set up the Metropolis step algorithm for our MCS
 def metropolis_step(lattice, nref, J):
     lat_dic, lat_coords, spinvalues = lattice
     old_energy = energy(lattice, J)
 
     #now pick random coord from lat_coords to flip 
-    flip_coords = random.choice(lat_coords)
-    index = lat_coords.index(flip_coords)
-    spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
-
+    flipcoord = random.choice(lat_coords)
+    flip_values(lat_coords, spinvalues, flipcoord)
+    
     #look to which cube this spin belongs to
-    cubes = []
-    for keys in lat_dic.keys():
-        coords, spins, _ = lat_dic[keys]
-        if flip_coords in coords:
-            spins[coords.index(flip_coords)] *= -1
-            cubes += [keys]
+    cubes = get_cubes(lat_dic, flipcoord)
+    
     
     #first look if this new configuration respects the hedgehog constraint
-    fluxes = []
-    neighbors = []
+    checks = []
     for cube in cubes:
-        fluxes += [flux_cube(lat_coords, spinvalues, cube, nref)]
-        neighbors.append([get_neighbors(cube, len(lat_dic)**(1/3))])
+        checks += [check_isolation(lattice, cube, nref)]
+            
+    if np.sum(checks)!=len(checks):
+        flip_values(lat_coords, spinvalues, flipcoord)
+        flip_dic(lat_dic, flipcoord)
+
     
-        for f in range(len(fluxes)):
-            if check_isolation(lattice, cubes[f], nref) !=0:
-                checks, _ = check_isolation(lattice, cubes[f], nref)
-                if collections.Counter(checks) != {fluxes[f]: len(checks)-1, 0:1} or collections.Counter(checks) != {0:1, fluxes[f]: len(checks)-1}:
-                    spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
-                    for keys in lat_dic.keys():
-                        coords, spins, _ = lat_dic[keys]
-                        if flip_coords in coords:
-                            spins[coords.index(flip_coords)] *= -1
-
-
     #if the first contraint is respected now calculate the probability of acception
     new_energy = energy(lattice, J)
+    print(new_energy)
     dE = new_energy - old_energy
 
     if dE > 0 and np.random.rand() > np.exp(-dE):
-        spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
-        for keys in lat_dic.keys():
-            coords, spins, _ = lat_dic[keys]
-            if flip_coords in coords:
-                spins[coords.index(flip_coords)] *= -1
+        flip_values(lat_coords, spinvalues, flipcoord)
+        flip_dic(lat_dic, flipcoord)
 
 
 def MCS(L, nref, J, n_steps):
