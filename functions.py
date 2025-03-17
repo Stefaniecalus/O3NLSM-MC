@@ -1,7 +1,5 @@
 #import packages
 import numpy as np
-import math
-import collections
 import random
 import matplotlib.pyplot as plt
 from datetime import datetime 
@@ -253,16 +251,16 @@ def check_isolation(lattice, indices, nref):
     return -flux in n_flux and np.sum(n_flux)==-flux
 
 
-def flip_dic(lat_dic, flipcoord):
+def flip_dic(lat_dic, flipcoord, new_spin):
     for keys in lat_dic.keys():
         coords, spins, _ = lat_dic[keys]
         if flipcoord in coords:
-            spins[coords.index(flipcoord)] *= -1
+            spins[coords.index(flipcoord)] = new_spin
     
 
-def flip_values(lat_coords, spinvalues, flipcoord):
+def flip_values(lat_coords, spinvalues, flipcoord, new_spin):
     index = lat_coords.index(flipcoord)
-    spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
+    spinvalues[index] = new_spin
 
     
 def get_cubes(lat_dic, flipcoord):
@@ -282,7 +280,8 @@ def metropolis_step(lattice, nref, J):
 
     #now pick random coord from lat_coords to flip 
     flipcoord = random.choice(lat_coords)
-    flip_values(lat_coords, spinvalues, flipcoord)
+    new_spin = vec()
+    flip_values(lat_coords, spinvalues, flipcoord, new_spin)
 
     #look to which cube this spin belongs to
     cubes = get_cubes(lat_dic, flipcoord)
@@ -294,8 +293,8 @@ def metropolis_step(lattice, nref, J):
         checks += [check_isolation(lattice, cube, nref)]
             
     if np.sum(checks)!=len(checks):
-        flip_values(lat_coords, spinvalues, flipcoord)
-        flip_dic(lat_dic, flipcoord)
+        flip_values(lat_coords, spinvalues, flipcoord, new_spin)
+        flip_dic(lat_dic, flipcoord, new_spin)
 
     
     #if the first contraint is respected now calculate the probability of acception
@@ -303,8 +302,8 @@ def metropolis_step(lattice, nref, J):
     dE = new_energy - old_energy
 
     if dE > 0 and np.random.rand() > np.exp(-dE):
-        flip_values(lat_coords, spinvalues, flipcoord)
-        flip_dic(lat_dic, flipcoord)
+        flip_values(lat_coords, spinvalues, flipcoord, new_spin)
+        flip_dic(lat_dic, flipcoord, new_spin)
 
 
 def MCS(L, nref, J, n_steps):
@@ -315,32 +314,3 @@ def MCS(L, nref, J, n_steps):
     E = energy(lattice, J)
     m = magnetization(lattice)
     return E,m
-
-
-#Do simulations
-L = 3
-nref = vec()
-J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 50000
-magnetizations = []
-energies = []
-
-
-#this will only calculate J=0, chance 1 to J_values for full calculations
-start_time = datetime.now()
-for J in J_values:
-    E, m = MCS(L, nref, J, n_steps)
-    energies += [E]
-    magnetizations += [m]
-
-end_time = datetime.now()
-print('Duration: {}'.format(end_time-start_time))
-
-
-# Plot results
-plt.figure(figsize=(10, 5))
-plt.subplot(1, 2, 1)
-plt.plot(J_values, magnetizations, marker='o')
-plt.xlabel("Exchange Interaction J")
-plt.ylabel("Magnetization per Spin")
-plt.show()
