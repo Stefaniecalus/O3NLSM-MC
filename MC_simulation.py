@@ -3,8 +3,8 @@ from functions import *
 #Do simulations
 L = 3
 nref = vec()
-J_values = [0, 0.2, 0.4] #0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 10
+J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
+n_steps = 5000
 magnetizations = []
 energies = []
 
