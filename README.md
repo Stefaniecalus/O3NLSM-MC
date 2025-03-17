@@ -12,7 +12,8 @@ Overview of files:
 -1monopole_outside : Checks that the neighbouring cube of a monopole-cube has zero total flux created inside
 - 1monopole_2cubes : Combination of the two above
 - random_2cubes : Checks that the common side and gauge potentials for a random 2cube system is the equal and opposite in sign 
-- functions : Introduces all necessary functions and initializations used in the MC simulations
+- func_flips : Introduces all necessary functions and initializations used in the MC simulations with spin flips
+- func_rot : Introduce all necessary functions and initializations used in the MC simulations with spin rotations
 - MC_simulation : Imports functions as a package and perfoms + plots our MC simulations 
  
 
