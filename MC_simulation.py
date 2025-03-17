@@ -1,4 +1,5 @@
-from functions import *
+from func_flips import *
+#from func_rot import * 
 
 #Do simulations
 L = 3
