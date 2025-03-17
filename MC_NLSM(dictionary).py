@@ -58,7 +58,7 @@ def get_neighbors(indices,L):
         (i, j - 1, k), (i, j + 1, k),  # y neighbors
         (i, j, k - 1), (i, j, k + 1)   # z neighbors
         ]
-    return list(set([(ni%L, nj%L, nk%L) for ni, nj, nk in neighbors]))
+    return list(set([(int(ni%L), int(nj%L), int(nk%L)) for ni, nj, nk in neighbors]))
 
 
 #Now we build up all useful functions to set up our MC criteria 
@@ -255,9 +255,9 @@ def check_isolation(lattice, indices, nref):
 
 def flip_dic(lat_dic, flipcoord):
     for keys in lat_dic.keys():
-            coords, spins, _ = lat_dic[keys]
-            if flipcoord in coords:
-                spins[coords.index(flipcoord)] *= -1
+        coords, spins, _ = lat_dic[keys]
+        if flipcoord in coords:
+            spins[coords.index(flipcoord)] *= -1
     
 
 def flip_values(lat_coords, spinvalues, flipcoord):
@@ -283,7 +283,7 @@ def metropolis_step(lattice, nref, J):
     #now pick random coord from lat_coords to flip 
     flipcoord = random.choice(lat_coords)
     flip_values(lat_coords, spinvalues, flipcoord)
-    
+
     #look to which cube this spin belongs to
     cubes = get_cubes(lat_dic, flipcoord)
     
@@ -300,7 +300,6 @@ def metropolis_step(lattice, nref, J):
     
     #if the first contraint is respected now calculate the probability of acception
     new_energy = energy(lattice, J)
-    print(new_energy)
     dE = new_energy - old_energy
 
     if dE > 0 and np.random.rand() > np.exp(-dE):
@@ -322,7 +321,7 @@ def MCS(L, nref, J, n_steps):
 L = 3
 nref = vec()
 J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 500
+n_steps = 50000
 magnetizations = []
 energies = []
 
