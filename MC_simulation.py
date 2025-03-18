@@ -2,10 +2,10 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 4
+L = 8
 nref = vec()
 J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 10000
+n_steps = 50000
 magnetizations = []
 energies = []
 
@@ -13,15 +13,18 @@ energies = []
 #this will only calculate J=0, chance 1 to J_values for full calculations
 start_time = datetime.now()
 for index, J in enumerate(J_values):
+    t1 = datetime.now()
     print("index = {}, J = {}".format(index, J))
     E, m = MCS(L, nref, J, n_steps)
     energies += [E]
     magnetizations += [m]
+    t2 = datetime.now()
+    print('Intermediate duration: {}'.format(t2-t1))
 
 end_time = datetime.now()
 
 DeltaT = end_time - start_time
-print('Duration time: {}'.format(DeltaT))
+print('Total duration: {}'.format(DeltaT))
 
 # Plot results
 fig, axs = plt.subplots(1, 2, figsize=(8, 5))
