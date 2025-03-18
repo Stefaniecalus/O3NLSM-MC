@@ -2,10 +2,10 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 3
+L = 4
 nref = vec()
 J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 5000
+n_steps = 10000
 magnetizations = []
 energies = []
 
@@ -19,6 +19,8 @@ for J in J_values:
 
 end_time = datetime.now()
 
+DeltaT = end_time - start_time
+print('Duration time: {}'.format(DeltaT))
 
 # Plot results
 fig, axs = plt.subplots(1, 2, figsize=(8, 5))
@@ -32,6 +34,7 @@ for i in range(2):
     axs[i].set_xlabel("Exchange Interaction J")
 
 plt.subplots_adjust(wspace=0.6, bottom=0.2)
-fig.suptitle('MC simulations with nsteps = {}'.format(n_steps))
+fig.suptitle('MC simulations with nsteps = {}, L = {}'.format(n_steps, L))
 fig.supxlabel('Duration time: {}'.format(end_time-start_time))
+plt.savefig(f'Output/L={L}_nsteps={n_steps}.png')
 plt.show()
