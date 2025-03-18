@@ -308,8 +308,11 @@ def metropolis_step(lattice, nref, J):
 def MCS(L, nref, J, n_steps):
     lattice = initial_lattice(L, nref)
     for i in range(n_steps):
+        t1 = datetime.now()
         print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
         metropolis_step(lattice, nref, J)
+        t2 = datetime.now()
+        print("Intermediate duration: {t}".format(t=t2-t1))
 
     E = energy(lattice, J)
     m = magnetization(lattice)
