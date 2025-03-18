@@ -12,7 +12,8 @@ energies = []
 
 #this will only calculate J=0, chance 1 to J_values for full calculations
 start_time = datetime.now()
-for J in J_values:
+for index, J in enumerate(J_values):
+    print("index = {}, J = {}".format(index, J))
     E, m = MCS(L, nref, J, n_steps)
     energies += [E]
     magnetizations += [m]
