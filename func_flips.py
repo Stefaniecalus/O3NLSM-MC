@@ -273,7 +273,7 @@ def get_cubes(lat_dic, flipcoord):
 
 
 #Now we set up the Metropolis step algorithm for our MCS
-def metropolis_step(lattice, nref, J):
+def metropolis_step(lattice, nref, J, acceptance):
     lat_dic, lat_coords, spinvalues = lattice
     old_energy = energy(lattice, J)
 
@@ -297,21 +297,24 @@ def metropolis_step(lattice, nref, J):
         if dE < 0 or np.random.rand() > np.exp(-dE):
             #If the Metropolis step is accepted we only still need to flip the dictionary value
             flip_dic(lat_dic, flipcoord)
-            print(1)
+            acceptance += [1]
+            
             
     else:
         #If the hedgehog constrained is not accepted we need to flip the spinvalue back to the old value
         flip_values(lat_coords, spinvalues, flipcoord)
-        print(0)
+        acceptance += [0]
+        
     
 
 
 def MCS(L, nref, J, n_steps):
+    acceptance = []
     lattice = initial_lattice(L, nref)
     for i in range(n_steps):
         print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
-        metropolis_step(lattice, nref, J)
+        metropolis_step(lattice, nref, J, acceptance)
 
     E = energy(lattice, J)
     m = magnetization(lattice)
-    return E,m
+    return E,m, acceptance

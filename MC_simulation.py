@@ -2,10 +2,10 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 8
+L = 3
 nref = vec()
 J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 50000
+n_steps = 500
 magnetizations = []
 energies = []
 
@@ -15,7 +15,7 @@ start_time = datetime.now()
 for index, J in enumerate(J_values):
     t1 = datetime.now()
     print("index = {}, J = {}".format(index, J))
-    E, m = MCS(L, nref, J, n_steps)
+    E, m, acceptance = MCS(L, nref, J, n_steps)
     energies += [E]
     magnetizations += [m]
     t2 = datetime.now()
@@ -25,6 +25,9 @@ end_time = datetime.now()
 
 DeltaT = end_time - start_time
 print('Total duration: {}'.format(DeltaT))
+
+#Calculate acceptance rate as:
+accept_rate = np.sum(acceptance)/len(acceptance)
 
 # Plot results
 fig, axs = plt.subplots(1, 2, figsize=(8, 5))
@@ -38,7 +41,7 @@ for i in range(2):
     axs[i].set_xlabel("Exchange Interaction J")
 
 plt.subplots_adjust(wspace=0.6, bottom=0.2)
-fig.suptitle('MC simulations with nsteps = {}, L = {}'.format(n_steps, L))
+fig.suptitle('MC simulations with nsteps = {}, L = {}, acceptance = {}'.format(n_steps, L, accept_rate))
 fig.supxlabel('Duration time: {}'.format(end_time-start_time))
 plt.savefig(f'Output/L={L}_nsteps={n_steps}.png')
 plt.show()
