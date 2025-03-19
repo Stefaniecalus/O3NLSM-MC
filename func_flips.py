@@ -309,7 +309,8 @@ def metropolis_step(lattice, nref, J):
 
 def MCS(L, nref, J, n_steps):
     lattice = initial_lattice(L, nref)
-    for _ in range(n_steps):
+    for i in range(n_steps):
+        print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
         metropolis_step(lattice, nref, J)
 
     E = energy(lattice, J)
