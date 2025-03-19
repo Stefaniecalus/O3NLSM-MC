@@ -273,7 +273,6 @@ def get_cubes(lat_dic, flipcoord):
 
 
 #Now we set up the Metropolis step algorithm for our MCS
-#Now we set up the Metropolis step algorithm for our MCS
 def metropolis_step(lattice, nref, J):
     lat_dic, lat_coords, spinvalues = lattice
     old_energy = energy(lattice, J)
@@ -285,24 +284,27 @@ def metropolis_step(lattice, nref, J):
     #look to which cube this spin belongs to
     cubes = get_cubes(lat_dic, flipcoord)
     
-    
     #first look if this new configuration respects the hedgehog constraint
     checks = []
     for cube in cubes:
         checks += [check_isolation(lattice, cube, nref)]
             
-    if np.sum(checks)!=len(checks):
-        flip_values(lat_coords, spinvalues, flipcoord)
-        flip_dic(lat_dic, flipcoord)
+    if np.sum(checks)==len(checks):
+        #if the first contraint is respected now calculate the probability of acception
+        new_energy = energy(lattice, J)
+        dE = new_energy - old_energy
 
+        if dE < 0 or np.random.rand() > np.exp(-dE):
+            #If the Metropolis step is accepted we only still need to flip the dictionary value
+            flip_dic(lat_dic, flipcoord)
+            print(1)
+            
+
+    else:
+        #If the hedgehog constrained is not accepted we need to flip the spinvalue back to the old value
+        flip_values(lat_coords, spinvalues, flipcoord)
+        print(0)
     
-    #if the first contraint is respected now calculate the probability of acception
-    new_energy = energy(lattice, J)
-    dE = new_energy - old_energy
-
-    if dE > 0 and np.random.rand() > np.exp(-dE):
-        flip_values(lat_coords, spinvalues, flipcoord)
-        flip_dic(lat_dic, flipcoord)
 
 
 def MCS(L, nref, J, n_steps):
