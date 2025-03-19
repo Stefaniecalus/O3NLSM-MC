@@ -214,7 +214,7 @@ def energy(lattice, J):
         neighbors = spin_neighbours(coordinate, len(lat_dic)**(1/3))
 
         for neighbor in neighbors:
-            energy += np.dot(coordinate, neighbor)
+            energy += np.dot(spinvalues[lat_coords.index(coordinate)], spinvalues[lat_coords.index(neighbor)])
 
     #Each pair is counted twice
     return -J * energy / 2 
@@ -299,7 +299,6 @@ def metropolis_step(lattice, nref, J):
             flip_dic(lat_dic, flipcoord)
             print(1)
             
-
     else:
         #If the hedgehog constrained is not accepted we need to flip the spinvalue back to the old value
         flip_values(lat_coords, spinvalues, flipcoord)
