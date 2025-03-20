@@ -32,6 +32,7 @@ print('Total duration: {}'.format(DeltaT))
 accept_rates = []
 for i in range(len(J_values)):
     accept_rates += [np.sum(acceptance)/len(acceptance)]
+accept_rates = np.mean(accept_rates)
 
 # Plot results
 fig, axs = plt.subplots(1, 2, figsize=(8, 5))
@@ -45,7 +46,7 @@ for i in range(2):
     axs[i].set_xlabel("Exchange Interaction J")
 
 plt.subplots_adjust(wspace=0.6, bottom=0.2)
-fig.suptitle('MC simulations with nsteps = {}, L = {}, acceptance = {}'.format(n_steps, L, accept_rates))
+fig.suptitle('MC simulations with nsteps = {}, L = {}, mean acceptance = {}'.format(n_steps, L, accept_rates))
 fig.supxlabel('Duration time: {}'.format(end_time-start_time))
 plt.savefig(f'Output/L={L}_nsteps={n_steps}.png')
 plt.show()
