@@ -31,7 +31,7 @@ print('Total duration: {}'.format(DeltaT))
 #Calculate acceptance rate as:
 accept_rates = []
 for i in range(len(J_values)):
-    accept_rates += [np.sum(acceptance)/len(acceptance)]
+    accept_rates += [np.sum(acceptance[i])/len(acceptance[i])]
 accept_rates = np.mean(accept_rates)
 
 # Plot results
