@@ -5,7 +5,7 @@ from func_flips import *
 L = 3
 nref = vec()
 J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 5000
+n_steps = 50
 magnetizations = []
 energies = []
 accept = []
@@ -23,6 +23,7 @@ for index, J in enumerate(J_values):
     t2 = datetime.now()
     print('Intermediate duration: {}'.format(t2-t1))
 
+
 end_time = datetime.now()
 
 DeltaT = end_time - start_time
@@ -31,7 +32,7 @@ print('Total duration: {}'.format(DeltaT))
 #Calculate acceptance rate as:
 accept_rates = []
 for i in range(len(J_values)):
-    accept_rates += [np.sum(acceptance[i])/len(acceptance[i])]
+    accept_rates += [np.sum(accept[i])/len(accept[i])]
 accept_rates = np.mean(accept_rates)
 
 # Plot results
