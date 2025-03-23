@@ -215,6 +215,8 @@ def energy(lattice, J):
         neighbors = spin_neighbours(coordinate, len(lat_dic)**(1/3))
 
         for neighbor in neighbors:
+            neighbor = tuple([np.round(x, 2) for x in neighbor])
+            print(neighbor)
             energy += np.dot(spinvalues[lat_coords.index(coordinate)], spinvalues[lat_coords.index(neighbor)])
 
     #Each pair is counted twice
