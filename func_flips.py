@@ -299,6 +299,9 @@ def metropolis_step(lattice, nref, J, acceptance):
         if dE < 0 or np.random.rand() > np.exp(-dE):
             #If the Metropolis step is accepted we only still need to flip the dictionary value
             flip_dic(lat_dic, flipcoord)
+            acceptance += [2]
+        
+        else:
             acceptance += [1]
             
             

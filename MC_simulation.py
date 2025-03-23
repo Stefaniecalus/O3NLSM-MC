@@ -2,13 +2,15 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 3
+L = 2
 nref = vec()
 J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 50
+n_steps = 3 
 magnetizations = []
 energies = []
 accept = []
+decline_hedgehog = []
+decline_energy = []
 
 
 #this will only calculate J=0, chance 1 to J_values for full calculations
@@ -19,21 +21,25 @@ for index, J in enumerate(J_values):
     E, m, acceptance = MCS(L, nref, J, n_steps)
     energies += [E]
     magnetizations += [m]
-    accept += [acceptance]
+    
+    #add the acceptance and decline rates: 
+    # 0 means no constraint met, 1 means hedgehog constraint met, 2 means hedgehog and energy constraint met
+    accept += [np.count_nonzero(acceptance == 2)]
+    decline_hedgehog += [np.count_nonzero(acceptance == 0)]
+    decline_energy += [np.count_nonzero(acceptance == 1)]
     t2 = datetime.now()
     print('Intermediate duration: {}'.format(t2-t1))
 
 
 end_time = datetime.now()
-
 DeltaT = end_time - start_time
 print('Total duration: {}'.format(DeltaT))
 
-#Calculate acceptance rate as:
-accept_rates = []
-for i in range(len(J_values)):
-    accept_rates += [np.sum(accept[i])/len(accept[i])]
-accept_rates = np.mean(accept_rates)
+#Calculate the mean acceptance rates over all J values:
+accept = np.mean(accept)
+decline_hedgehog = np.mean(decline_hedgehog)
+decline_energy = np.mean(decline_energy)
+
 
 # Plot results
 fig, axs = plt.subplots(1, 2, figsize=(8, 5))
@@ -47,7 +53,7 @@ for i in range(2):
     axs[i].set_xlabel("Exchange Interaction J")
 
 plt.subplots_adjust(wspace=0.6, bottom=0.2)
-fig.suptitle('MC simulations with nsteps = {}, L = {}, mean acceptance = {}'.format(n_steps, L, accept_rates))
-fig.supxlabel('Duration time: {}'.format(end_time-start_time))
+fig.suptitle('MC simulations with nsteps = {}, L = {}'.format(n_steps, L))
+fig.supxlabel('Duration time: {}\n Acceptance = {}, decline (hedgehog) = {}, decline (energy) = {}'.format(end_time-start_time, accept, decline_hedgehog, decline_energy))
 plt.savefig(f'Output/L={L}_nsteps={n_steps}.png')
 plt.show()
