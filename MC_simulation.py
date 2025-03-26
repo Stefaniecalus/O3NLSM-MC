@@ -2,10 +2,10 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 2
+L = 6
 nref = vec()
-J_values = [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6]
-n_steps = 3 
+J_values = [0.3, 0.7, 1.3, 1.7]
+n_steps = 50000
 magnetizations = []
 energies = []
 accept = []
@@ -13,7 +13,6 @@ decline_hedgehog = []
 decline_energy = []
 
 
-#this will only calculate J=0, chance 1 to J_values for full calculations
 start_time = datetime.now()
 for index, J in enumerate(J_values):
     t1 = datetime.now()
@@ -24,9 +23,9 @@ for index, J in enumerate(J_values):
     
     #add the acceptance and decline rates: 
     # 0 means no constraint met, 1 means hedgehog constraint met, 2 means hedgehog and energy constraint met
-    accept += [np.count_nonzero(acceptance == 2)]
-    decline_hedgehog += [np.count_nonzero(acceptance == 0)]
-    decline_energy += [np.count_nonzero(acceptance == 1)]
+    accept += [acceptance.count(2)]
+    decline_hedgehog += [acceptance.count(0)]
+    decline_energy += [acceptance.count(1)]
     t2 = datetime.now()
     print('Intermediate duration: {}'.format(t2-t1))
 
@@ -41,6 +40,7 @@ decline_hedgehog = np.mean(decline_hedgehog)
 decline_energy = np.mean(decline_energy)
 
 
+print(magnetizations, energies, accept, decline_hedgehog, decline_energy )
 # Plot results
 fig, axs = plt.subplots(1, 2, figsize=(8, 5))
 axs[0].plot(J_values, magnetizations, marker='o', color='firebrick')

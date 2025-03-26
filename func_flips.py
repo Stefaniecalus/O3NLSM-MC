@@ -41,8 +41,9 @@ def make_spins(N):
     """
     spins = []
     for i in range(N):
-        spins += [vec()]
-        #spins += [(1/np.sqrt(3), 1/np.sqrt(3), 1/np.sqrt(3))]
+        #spins += [vec()]
+        #spins += [(1/np.sqrt(3),1/np.sqrt(3),1/np.sqrt(3))]
+        spins += [(0, 0, 1)]
     return spins
 
 
@@ -236,35 +237,40 @@ def magnetization(lattice):
     return np.linalg.norm(M)/len(spinvalues)
 
 
-def check_isolation(lattice, indices, nref):
+def check_isolation(lat_dic, indices, nref):
     """
     Check wether every monopole is accompanied by an equally strong anti-monopole
     """
-    lat_dic, lat_coords, spinvalues = lattice
-    flux = flux_cube(lat_coords, spinvalues, indices, nref)
+    flux = lat_dic[indices][2]
     n_flux = []
-    
-    if flux > 1e-6:
-        neighbors = get_neighbors(indices, len(lat_dic)**(1/3))
-        for neighbor in neighbors:
-            n_flux += [flux_cube(lat_coords, spinvalues, neighbor, nref)] 
      
+    neighbors = get_neighbors(indices, len(lat_dic)**(1/3))
+    for neighbor in neighbors:
+        n_flux += [lat_dic[neighbor][2]] 
     
-    return -flux in n_flux and np.sum(n_flux)==-flux
+    return -flux in n_flux and abs(np.sum(n_flux)+flux) < 1e-6
 
 
-def flip_dic(lat_dic, flipcoord):
+
+def flip_dic(lat_dic, flipcoord, cone):
     for keys in lat_dic.keys():
-            coords, spins, _ = lat_dic[keys]
-            if flipcoord in coords:
-                spins[coords.index(flipcoord)] *= -1
+        coords, spins, flux = lat_dic[keys]
+        if flipcoord in coords:
+            spins[coords.index(flipcoord)] = tuple([-1*spins[coords.index(flipcoord)][x] + cone[x] for x in range(3)])
+            spins[coords.index(flipcoord)] = spins[coords.index(flipcoord)]/np.linalg.norm(spins[coords.index(flipcoord)])
     
-
-def flip_values(lat_coords, spinvalues, flipcoord):
+    
+def flip_values(lat_coords, spinvalues, flipcoord, cone):
     index = lat_coords.index(flipcoord)
-    spinvalues[index] = tuple([-1*x for x in spinvalues[index]])
-
+    spinvalues[index] = tuple([-1*spinvalues[index][x] + cone[x] for x in range(3)])
+    spinvalues[index] = spinvalues[index]/np.linalg.norm(spinvalues[index])
     
+     
+def update_flux(lattice, indices, nref):
+    lat_dic, lat_coords, spinvalues = lattice
+    lat_dic[indices][2] = flux_cube(lat_coords, spinvalues, indices, nref)
+
+
 def get_cubes(lat_dic, flipcoord):
     cubes =[]
     for keys in lat_dic.keys():
@@ -279,9 +285,13 @@ def metropolis_step(lattice, nref, J, acceptance):
     lat_dic, lat_coords, spinvalues = lattice
     old_energy = energy(lattice, J)
 
+    #Define cone to give the flipped value a little nudge to avoid singularities
+    dx, dy = random.uniform(-np.pi/4, np.pi/4), random.uniform(-np.pi/4, np.pi/4)
+    
     #now pick random coord from lat_coords to flip 
     flipcoord = random.choice(lat_coords)
-    flip_values(lat_coords, spinvalues, flipcoord)
+    OG = spinvalues[lat_coords.index(flipcoord)]
+    flip_values(lat_coords, spinvalues, flipcoord, [dx, dy, 0])
 
     #look to which cube this spin belongs to
     cubes = get_cubes(lat_dic, flipcoord)
@@ -289,8 +299,9 @@ def metropolis_step(lattice, nref, J, acceptance):
     #first look if this new configuration respects the hedgehog constraint
     checks = []
     for cube in cubes:
-        checks += [check_isolation(lattice, cube, nref)]
-            
+        update_flux(lattice, cube, nref)
+        checks += [check_isolation(lat_dic, cube, nref)]
+      
     if np.sum(checks)==len(checks):
         #if the first contraint is respected now calculate the probability of acception
         new_energy = energy(lattice, J)
@@ -298,21 +309,24 @@ def metropolis_step(lattice, nref, J, acceptance):
 
         if dE < 0 or np.random.rand() > np.exp(-dE):
             #If the Metropolis step is accepted we only still need to flip the dictionary value
-            flip_dic(lat_dic, flipcoord)
+            flip_dic(lat_dic, flipcoord, [dx, dy, 0])
             acceptance += [2]
         
         else:
+            #If the Metropolis step is not accepted we need to flip the spinvalue and flux back to the old values
+            spinvalues[lat_coords.index(flipcoord)] = OG
+            for cube in cubes: update_flux(lattice, cube, nref)
             acceptance += [1]
             
             
     else:
-        #If the hedgehog constrained is not accepted we need to flip the spinvalue back to the old value
-        flip_values(lat_coords, spinvalues, flipcoord)
-        acceptance += [0]
-        
+        #If the hedgehog constrained is not accepted we need to flip the spinvalue and flux back to the old values
+        spinvalues[lat_coords.index(flipcoord)] = OG
+        for cube in cubes: update_flux(lattice, cube, nref)
+        acceptance += [0] 
     
 
-
+    
 def MCS(L, nref, J, n_steps):
     acceptance = []
     lattice = initial_lattice(L, nref)
