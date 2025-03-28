@@ -5,13 +5,14 @@ steps = 100
 L = 6
 nref = vec()
 J = 0.3
-acceptance = []
+acceptance = [0,0,0]
 lattice = initial_lattice(L, nref)
 lat_dic, lat_coords, spinvalues = lattice
+e = energy(lattice, J)
 
 start = time.time()
 for i in range(steps):
-    metropolis_step(lattice, nref, J, acceptance)
+    e = metropolis_step(lattice, nref, J, acceptance, e)
     # lat_dic, lat_coords, spinvalues = lattice
     # old_energy = energy(lattice, J)
 

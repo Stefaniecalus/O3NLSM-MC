@@ -283,9 +283,8 @@ def get_cubes(lat_dic, flipcoord):
 
 
 #Now we set up the Metropolis step algorithm for our MCS
-def metropolis_step(lattice, nref, J, acceptance):
+def metropolis_step(lattice, nref, J, acceptance, E):
     lat_dic, lat_coords, spinvalues = lattice
-    old_energy = energy(lattice, J)
 
     #Define cone to give the flipped value a little nudge to avoid singularities
     dx, dy = random.uniform(-np.pi/4, np.pi/4), random.uniform(-np.pi/4, np.pi/4)
@@ -306,8 +305,8 @@ def metropolis_step(lattice, nref, J, acceptance):
       
     if np.sum(checks)==len(checks):
         #if the first contraint is respected now calculate the probability of acception
-        new_energy = energy(lattice, J)
-        dE = new_energy - old_energy
+        new_energy = energy(lattice, J) # should be able to calculate this locally
+        dE = new_energy - E
 
         if dE < 0 or np.random.rand() > np.exp(-dE):
             #If the Metropolis step is accepted we only still need to flip the dictionary value
@@ -320,21 +319,22 @@ def metropolis_step(lattice, nref, J, acceptance):
             for cube in cubes: update_flux(lattice, cube, nref)
             acceptance[1] += 1
             
-            
+        return new_energy    
     else:
         #If the hedgehog constrained is not accepted we need to flip the spinvalue and flux back to the old values
         spinvalues[lat_coords.index(flipcoord)] = OG
         for cube in cubes: update_flux(lattice, cube, nref)
         acceptance[0] += 1
-    
+        return E
 
     
 def MCS(L, nref, J, n_steps):
-    acceptance = (0,0,0) # hedgehog constraint denied, energy constraint denied, energy constraint accepted
+    acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
     lattice = initial_lattice(L, nref)
+    E = energy(lattice, J)
     for i in range(n_steps):
         print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
-        metropolis_step(lattice, nref, J, acceptance)
+        E = metropolis_step(lattice, nref, J, acceptance, E)
 
     E = energy(lattice, J)
     m = magnetization(lattice)
