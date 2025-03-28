@@ -4,8 +4,7 @@ import random
 import matplotlib.pyplot as plt
 from datetime import datetime 
 from itertools import product
-
-
+from math import ceil
 
 #Some functions that help initialize our lattice
 def vec():
@@ -203,6 +202,9 @@ def initial_lattice(L, nref):
 
     return lattice, lat_coords, spinvalues
 
+# required for floating point representation errors
+def ceil_half_int(n):
+    return ceil(2 * n) / 2
 
 #For a given lattice we can calculate certain parameters of interest
 def energy(lattice, J):
@@ -216,7 +218,7 @@ def energy(lattice, J):
         neighbors = spin_neighbours(coordinate, len(lat_dic)**(1/3))
 
         for neighbor in neighbors:
-            neighbor = tuple([np.round(x, 2) for x in neighbor])
+            neighbor = tuple([ceil_half_int(x) for x in neighbor])
             energy += np.dot(spinvalues[lat_coords.index(coordinate)], spinvalues[lat_coords.index(neighbor)])
 
     #Each pair is counted twice
