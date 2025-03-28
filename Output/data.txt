@@ -1,0 +1,3 @@
+L   J     magnetisation         energy              Acceptance      Hedhehog denial     Energy denial   Total steps Time
+
+6   0.3   0.21177059680259008   -48.7527515760248   18064           62180               19756           100000      5:20:59.720843
