@@ -2,10 +2,10 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 6
+L = 4
 nref = vec()
-J_values = [0.3, 0.7, 1.3, 1.7]
-n_steps = 100000
+J_values = [0.3] #,0.7, 1.3, 1.7]
+n_steps = 50
 magnetizations = []
 energies = []
 accept = 0

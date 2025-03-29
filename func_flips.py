@@ -86,7 +86,6 @@ def spin_neighbours(coord, L):
     return neighbors
     
 
-
 def gauge_pot(lat_coords, spinvalues, coordi, coordj, nref):
     """
     Calculate the gauge potential between two spins, this formula was taken from A. Vishwanath, O.I. Motrunich (2004)
@@ -189,9 +188,11 @@ def initial_lattice(L, nref):
         #Fill in all coordinates in a single list for later use
         lat_coords += coordinates
     
+    #Uniquely identify a spinvalue with all coordinates
     lat_coords = list(set(lat_coords))
     spinvalues = make_spins(len(lat_coords))
     
+    #Fill in spin- and fluxvalues for every cube in dictionary 
     for i,j,k in product(range(L), range(L), range(L)):
         indices = (i,j,k)
         coordinates, spins, _ = lattice[indices]
@@ -201,6 +202,7 @@ def initial_lattice(L, nref):
         lattice[indices][2] += flux_cube(lat_coords, spinvalues, indices, nref)
 
     return lattice, lat_coords, spinvalues
+
 
 # required for floating point representation errors
 def ceil_half_int(n):
@@ -239,7 +241,7 @@ def magnetization(lattice):
     return np.linalg.norm(M)/len(spinvalues)
 
 
-def check_isolation(lat_dic, indices, nref):
+def check_isolation(lat_dic, indices):
     """
     Check wether every monopole is accompanied by an equally strong anti-monopole
     """
@@ -253,8 +255,10 @@ def check_isolation(lat_dic, indices, nref):
     return -flux in n_flux and abs(np.sum(n_flux)+flux) < 1e-6
 
 
-
 def flip_dic(lat_dic, flipcoord, cone):
+    """
+    Flip the spinvalues in the dictionary of our lattice system
+    """
     for keys in lat_dic.keys():
         coords, spins, flux = lat_dic[keys]
         if flipcoord in coords:
@@ -263,17 +267,26 @@ def flip_dic(lat_dic, flipcoord, cone):
     
     
 def flip_values(lat_coords, spinvalues, flipcoord, cone):
+    """
+    Flip the spinvalues in the list of spinvalues of our lattice system
+    """
     index = lat_coords.index(flipcoord)
     spinvalues[index] = tuple([-1*spinvalues[index][x] + cone[x] for x in range(3)])
     spinvalues[index] = spinvalues[index]/np.linalg.norm(spinvalues[index])
     
      
 def update_flux(lattice, indices, nref):
+    """
+    Update the flux in the lattice dictionary of our system after a spinflip 
+    """
     lat_dic, lat_coords, spinvalues = lattice
     lat_dic[indices][2] = flux_cube(lat_coords, spinvalues, indices, nref)
 
 
 def get_cubes(lat_dic, flipcoord):
+    """
+    Calculate the cubes the flipped spincoordinate belongs to
+    """
     cubes =[]
     for keys in lat_dic.keys():
         coords, spins, _ = lat_dic[keys]
@@ -282,17 +295,59 @@ def get_cubes(lat_dic, flipcoord):
     return cubes
 
 
+def get_cone(lat_coords, spinvalues, flipcoord, nref, L, eps=0.01):
+    """
+    If the flipping of flipcoord creates two anti-parallel spinvalues, then the gauge_pot() function will return some singularities
+    We check wether a random small nudge along the x- and/or y-axis is necessary or not 
+    """
+    flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0])
+    flip_nn = spin_neighbours(flipcoord, L)
+    A = []
+
+    for nn in flip_nn:
+        nn = tuple([ceil_half_int(x) for x in nn])
+    A += [gauge_pot(lat_coords, spinvalues, flipcoord, nn, nref)]
+    
+    #If any value in A is 'nan' then we will need to construct a cone around our spin-flip
+    if np.isnan(A).any():
+        dx = random.choice([-eps, 0, eps])
+        dy = random.choice([-eps, 0, eps])
+        flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0])
+        return [dx, dy, 0]
+    
+    else: 
+        flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0])
+        return [0, 0, 0]
+
+
+def change_energy(lattice, flipcoord, J):
+    """
+    Calculate the energy of the bond between a flipped coordinate and its neighbours
+    """
+    lat_dic, lat_coords, spinvalues = lattice
+    energy = 0
+    
+    flip_nn = spin_neighbours(flipcoord, len(lat_dic)**(1/3))
+    for nn in flip_nn:
+        nn = tuple([ceil_half_int(x) for x in nn])
+        energy += np.dot(spinvalues[lat_coords.index(flipcoord)], spinvalues[lat_coords.index(nn)])
+        
+    return -J * energy 
+
+
 #Now we set up the Metropolis step algorithm for our MCS
 def metropolis_step(lattice, nref, J, acceptance, E):
     lat_dic, lat_coords, spinvalues = lattice
-
-    #Define cone to give the flipped value a little nudge to avoid singularities
-    dx, dy = random.uniform(-np.pi/4, np.pi/4), random.uniform(-np.pi/4, np.pi/4)
     
     #now pick random coord from lat_coords to flip 
     flipcoord = random.choice(lat_coords)
     OG = spinvalues[lat_coords.index(flipcoord)]
-    flip_values(lat_coords, spinvalues, flipcoord, [dx, dy, 0])
+    E_removed = change_energy(lattice, flipcoord, J)
+
+    #Define cone to give the flipped value a little nudge to avoid singularities
+    cone = get_cone(lat_coords, spinvalues, flipcoord, nref, len(lat_dic)**(1/3))
+    flip_values(lat_coords, spinvalues, flipcoord, cone)
+    E_added = change_energy(lattice, flipcoord, J)
 
     #look to which cube this spin belongs to
     cubes = get_cubes(lat_dic, flipcoord)
@@ -301,16 +356,15 @@ def metropolis_step(lattice, nref, J, acceptance, E):
     checks = []
     for cube in cubes:
         update_flux(lattice, cube, nref)
-        checks += [check_isolation(lat_dic, cube, nref)]
+        checks += [check_isolation(lat_dic, cube)]
       
     if np.sum(checks)==len(checks):
         #if the first contraint is respected now calculate the probability of acception
-        new_energy = energy(lattice, J) # should be able to calculate this locally
-        dE = new_energy - E
+        dE = E_added-E_removed
 
         if dE < 0 or np.random.rand() > np.exp(-dE):
             #If the Metropolis step is accepted we only still need to flip the dictionary value
-            flip_dic(lat_dic, flipcoord, [dx, dy, 0])
+            flip_dic(lat_dic, flipcoord, cone)
             acceptance[2] += 1
         
         else:
@@ -319,7 +373,8 @@ def metropolis_step(lattice, nref, J, acceptance, E):
             for cube in cubes: update_flux(lattice, cube, nref)
             acceptance[1] += 1
             
-        return new_energy    
+        return E-E_removed+E_added  
+      
     else:
         #If the hedgehog constrained is not accepted we need to flip the spinvalue and flux back to the old values
         spinvalues[lat_coords.index(flipcoord)] = OG
