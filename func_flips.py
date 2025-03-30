@@ -17,7 +17,7 @@ def vec():
 
 def center(x):
     """
-    This function return x between (-pi, pi]
+    This function returns x between (-pi, pi]
     """
     return (x % (2*np.pi)) - (2*np.pi)*((x % (2*np.pi)) // (((2*np.pi) + 1)//2))
 
@@ -229,7 +229,8 @@ def energy(lattice, J):
 
 def magnetization(lattice):
     """
-    Check the total magnetization of the spin system
+    Check the total magnetization of the spin system by adding all x-, -y and z-components respectively
+    and then taking the norm of that vector
     """
     lat_dic, lat_coords, spinvalues = lattice
     V = len(lat_dic.keys())
@@ -243,7 +244,7 @@ def magnetization(lattice):
 
 def check_isolation(lat_dic, indices):
     """
-    Check wether every monopole is accompanied by an equally strong anti-monopole
+    Check wether every monopole is accompanied by one equally strong anti-monopole
     """
     flux = lat_dic[indices][2]
     n_flux = []
@@ -257,7 +258,7 @@ def check_isolation(lat_dic, indices):
 
 def flip_dic(lat_dic, flipcoord, cone):
     """
-    Flip the spinvalues in the dictionary of our lattice system
+    Flip a spinvalue in the dictionary of our lattice system based on a chosen coordinate
     """
     for keys in lat_dic.keys():
         coords, spins, flux = lat_dic[keys]
@@ -268,7 +269,7 @@ def flip_dic(lat_dic, flipcoord, cone):
     
 def flip_values(lat_coords, spinvalues, flipcoord, cone):
     """
-    Flip the spinvalues in the list of spinvalues of our lattice system
+    Flip a spinvalues in the list of spinvalues of our lattice system based on a chosen coordinate
     """
     index = lat_coords.index(flipcoord)
     spinvalues[index] = tuple([-1*spinvalues[index][x] + cone[x] for x in range(3)])
@@ -298,25 +299,26 @@ def get_cubes(lat_dic, flipcoord):
 def get_cone(lat_coords, spinvalues, flipcoord, nref, L, eps=0.01):
     """
     If the flipping of flipcoord creates two anti-parallel spinvalues, then the gauge_pot() function will return some singularities
-    We check wether a random small nudge along the x- and/or y-axis is necessary or not 
+    We check wether a random small nudge eps along the x- and/or y-axis is necessary or not 
     """
+    #First flip the chosen coordinate 
     flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0])
     flip_nn = spin_neighbours(flipcoord, L)
     A = []
 
     for nn in flip_nn:
         nn = tuple([ceil_half_int(x) for x in nn])
-    A += [gauge_pot(lat_coords, spinvalues, flipcoord, nn, nref)]
+        A += [gauge_pot(lat_coords, spinvalues, flipcoord, nn, nref)]
     
-    #If any value in A is 'nan' then we will need to construct a cone around our spin-flip
+    #If any value in A is 'nan' then we will need to construct a cone around our spin-flip 
     if np.isnan(A).any():
         dx = random.choice([-eps, 0, eps])
         dy = random.choice([-eps, 0, eps])
-        flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0])
+        flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0]) #We return the coneless spinflip to its orignal value 
         return [dx, dy, 0]
     
     else: 
-        flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0])
+        flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0]) #We return the coneless spinflip to its orignal value
         return [0, 0, 0]
 
 
@@ -339,12 +341,12 @@ def change_energy(lattice, flipcoord, J):
 def metropolis_step(lattice, nref, J, acceptance, E):
     lat_dic, lat_coords, spinvalues = lattice
     
-    #now pick random coord from lat_coords to flip 
+    #Pick random coord from lat_coords to flip 
     flipcoord = random.choice(lat_coords)
     OG = spinvalues[lat_coords.index(flipcoord)]
     E_removed = change_energy(lattice, flipcoord, J)
 
-    #Define cone to give the flipped value a little nudge to avoid singularities
+    #Define cone to give the flipped value a little nudge to avoid singularities if necessary 
     cone = get_cone(lat_coords, spinvalues, flipcoord, nref, len(lat_dic)**(1/3))
     flip_values(lat_coords, spinvalues, flipcoord, cone)
     E_added = change_energy(lattice, flipcoord, J)
@@ -362,7 +364,7 @@ def metropolis_step(lattice, nref, J, acceptance, E):
         #if the first contraint is respected now calculate the probability of acception
         dE = E_added-E_removed
 
-        if dE < 0 or np.random.rand() > np.exp(-dE):
+        if dE < 0 or np.random.rand() <= np.exp(-dE):
             #If the Metropolis step is accepted we only still need to flip the dictionary value
             flip_dic(lat_dic, flipcoord, cone)
             acceptance[2] += 1
