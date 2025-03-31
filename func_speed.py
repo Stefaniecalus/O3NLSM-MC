@@ -258,7 +258,7 @@ def flip_dic(lat_dic, flipcoord, cone):
         if flipcoord in coords:
             idx = coords.index(flipcoord)  # Find the index once
             # Flip the spin value with the cone adjustment and normalize it
-            spins[idx] = -spins[idx] + cone
+            spins[idx] = tuple([-1*spins[idx][x] + cone[x] for x in range(3)])
             spins[idx] /= np.linalg.norm(spins[idx])  # Normalize the spin
 
  
