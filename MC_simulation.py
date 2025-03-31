@@ -2,10 +2,10 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 8
+L = 16
 nref = vec()
-J_values = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7]
-n_steps = 5000
+J_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+n_steps = 1
 magnetizations = []
 energies = []
 accept = 0
@@ -42,18 +42,18 @@ decline_energy = np.mean(decline_energy)
 
 print(magnetizations, energies, accept, decline_hedgehog, decline_energy )
 # Plot results
-fig, axs = plt.subplots(1, 2, figsize=(8, 5))
-axs[0].plot(J_values, magnetizations, marker='o', color='firebrick')
-axs[0].set_ylabel("Magnetization per spin")
+#fig, axs = plt.subplots(1, 2, figsize=(8, 5))
+#axs[0].plot(J_values, magnetizations, marker='o', color='firebrick')
+#axs[0].set_ylabel("Magnetization per spin")
 
-axs[1].plot(J_values, energies, marker='o', color='firebrick')
-axs[1].set_ylabel("Energy of system")
+#axs[1].plot(J_values, energies, marker='o', color='firebrick')
+#axs[1].set_ylabel("Energy of system")
 
-for i in range(2):
-    axs[i].set_xlabel("Exchange Interaction J")
+#for i in range(2):
+    #axs[i].set_xlabel("Exchange Interaction J")
 
-plt.subplots_adjust(wspace=0.6, bottom=0.2)
-fig.suptitle('MC simulations with nsteps = {}, L = {}'.format(n_steps, L))
-fig.supxlabel('Duration time: {}\n Acceptance = {}, decline (hedgehog) = {}, decline (energy) = {}'.format(end_time-start_time, accept, decline_hedgehog, decline_energy))
+#plt.subplots_adjust(wspace=0.6, bottom=0.2)
+#fig.suptitle('MC simulations with nsteps = {}, L = {}'.format(n_steps, L))
+#fig.supxlabel('Duration time: {}\n Acceptance = {}, decline (hedgehog) = {}, decline (energy) = {}'.format(end_time-start_time, accept, decline_hedgehog, decline_energy))
 # plt.savefig(f'Output/L={L}_nsteps={n_steps}.png')
-plt.show()
+#plt.show()

@@ -243,15 +243,16 @@ def check_isolation(lat_dic, indices):
 
 def flip_dic(lat_dic, flipcoord, cone):
     """
-    Flip a spinvalue in the dictionary of our lattice system based on a chosen coordinate
+    Flip a spinvalue in the dictionary of our lattice system based on a chosen coordinate.
     """
-    for keys in lat_dic.keys():
-        coords, spins, flux = lat_dic[keys]
+    for coords, spins, flux in lat_dic.values():
         if flipcoord in coords:
-            spins[coords.index(flipcoord)] = tuple([-1*spins[coords.index(flipcoord)][x] + cone[x] for x in range(3)])
-            spins[coords.index(flipcoord)] = spins[coords.index(flipcoord)]/np.linalg.norm(spins[coords.index(flipcoord)])
+            idx = coords.index(flipcoord)  # Find the index once
+            # Flip the spin value with the cone adjustment and normalize it
+            spins[idx] = tuple([-1*spins[idx][x] + cone[x] for x in range(3)])
+            spins[idx] /= np.linalg.norm(spins[idx])  # Normalize the spin
     
-    
+
 def flip_values(lat_coords, spinvalues, flipcoord, cone):
     """
     Flip a spinvalues in the list of spinvalues of our lattice system based on a chosen coordinate
@@ -304,17 +305,27 @@ def get_cone(lat_coords, spinvalues, flipcoord, nref, L, eps=0.01):
 
 def change_energy(lattice, flipcoord, J):
     """
-    Calculate the energy of the bond between a flipped coordinate and its neighbours
+    Calculate the energy of the bond between a flipped coordinate and its neighbors
     """
     lat_dic, lat_coords, spinvalues = lattice
     energy = 0
-    
+
+    # Get the neighbors of the flipped coordinate
     flip_nn = spin_neighbours(flipcoord, len(lat_dic)**(1/3))
+    
+    # Precompute the index of flipcoord for efficiency
+    flip_index = lat_coords.index(flipcoord)
+
+    # Calculate the energy
     for nn in flip_nn:
-        nn = tuple([ceil_half_int(x) for x in nn])
-        energy += np.dot(spinvalues[lat_coords.index(flipcoord)], spinvalues[lat_coords.index(nn)])
+        # Convert neighbor coordinates and get their index once
+        nn_ceil = tuple([ceil_half_int(x) for x in nn])
+        nn_index = lat_coords.index(nn_ceil)
         
-    return -J * energy 
+        # Access the spin values directly
+        energy += np.dot(spinvalues[flip_index], spinvalues[nn_index])
+
+    return -J * energy
 
 
 #Now we set up the Metropolis step algorithm for our MCS
@@ -325,11 +336,13 @@ def metropolis_step(lattice, nref, J, acceptance, E):
     flipcoord = random.choice(lat_coords)
     OG = spinvalues[lat_coords.index(flipcoord)]
     E_removed = change_energy(lattice, flipcoord, J)
+    
 
     #Define cone to give the flipped value a little nudge to avoid singularities if necessary 
     cone = get_cone(lat_coords, spinvalues, flipcoord, nref, len(lat_dic)**(1/3))
     flip_values(lat_coords, spinvalues, flipcoord, cone)
     E_added = change_energy(lattice, flipcoord, J)
+    
 
     #look to which cube this spin belongs to
     cubes = get_cubes(lat_dic, flipcoord)
