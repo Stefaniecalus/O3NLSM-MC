@@ -34,18 +34,6 @@ def make_coords(indices):
             (0+i,0.5+j,1+k), (0+i,1+j,1+k), (1+i,0.5+j,1+k), (0.5+i,1+j,1+k), (1+i,1+j,1+k)]
 
 
-def make_spins(N):
-    """
-    Make a desired amount (N) of random oriented 3-component unit spin vectors
-    """
-    spins = []
-    for i in range(N):
-        #spins += [vec()]
-        #spins += [(1/np.sqrt(3),1/np.sqrt(3),1/np.sqrt(3))]
-        spins += [(0, 0, 1)]
-    return spins
-
-
 def get_neighbors(indices,L):
     """
     Give all neighbours of a cube based on the cube indices, with PBC
@@ -167,7 +155,7 @@ def flux_cube(lat_coords, spinvalues, indices, nref):
 
 
 #form lattice geometry using dictionaries
-def initial_lattice(L, nref):
+def initial_lattice(L):
     """
     L represents the amount of cubes in each direction of our system (LxLxL)
     From this we build a dictionary which gives indices (i,j,k) to each cube and belonging to each cube we build up the coordinates, spins and flux
@@ -177,10 +165,10 @@ def initial_lattice(L, nref):
     
     for i,j,k in product(range(L), range(L), range(L)):
         
-        #Make cube indices, coordinates
+        #Make cube indices, coordinates, spinvalues and fluxes for a polarized state
         indices = (i,j,k)
         coordinates = make_coords(indices)
-        spins = [] 
+        spins = [(0, 0, 1)]*20
         flux = 0
 
         lattice.update({indices: [coordinates, spins, flux]})
@@ -188,21 +176,11 @@ def initial_lattice(L, nref):
         #Fill in all coordinates in a single list for later use
         lat_coords += coordinates
     
-    #Uniquely identify a spinvalue with all coordinates
+    #Make sure you only keep the unique coordinates and related spinvalues
     lat_coords = list(set(lat_coords))
-    spinvalues = make_spins(len(lat_coords))
+    spinvalues = [(0, 0, 1)]*len(lat_coords)
     
-    #Fill in spin- and fluxvalues for every cube in dictionary 
-    for i,j,k in product(range(L), range(L), range(L)):
-        indices = (i,j,k)
-        coordinates, spins, _ = lattice[indices]
-        for i in coordinates:
-            index = lat_coords.index(i)
-            spins += [spinvalues[index]]
-        lattice[indices][2] += flux_cube(lat_coords, spinvalues, indices, nref)
-
     return lattice, lat_coords, spinvalues
-
 
 # required for floating point representation errors
 def ceil_half_int(n):
@@ -216,15 +194,23 @@ def energy(lattice, J):
     lat_dic, lat_coords, spinvalues = lattice
     energy = 0
 
+    # Create a dictionary for fast index lookup
+    coord_to_index = {coord: idx for idx, coord in enumerate(lat_coords)}
+
+    # Loop through each coordinate and its neighbors
     for coordinate in lat_coords:
         neighbors = spin_neighbours(coordinate, len(lat_dic)**(1/3))
 
         for neighbor in neighbors:
-            neighbor = tuple([ceil_half_int(x) for x in neighbor])
-            energy += np.dot(spinvalues[lat_coords.index(coordinate)], spinvalues[lat_coords.index(neighbor)])
+            # Convert neighbor coordinates to integer form only once
+            neighbor = tuple(ceil_half_int(x) for x in neighbor)
 
-    #Each pair is counted twice
-    return -J * energy / 2 
+            # Ensure the pair (coordinate, neighbor) is only computed once (avoid double counting)
+            if coord_to_index[coordinate] < coord_to_index[neighbor]:
+                # Add energy contribution for this pair
+                energy += np.dot(spinvalues[coord_to_index[coordinate]], spinvalues[coord_to_index[neighbor]])
+
+    return -J * energy
 
 
 def magnetization(lattice):
@@ -233,7 +219,6 @@ def magnetization(lattice):
     and then taking the norm of that vector
     """
     lat_dic, lat_coords, spinvalues = lattice
-    V = len(lat_dic.keys())
     M = np.zeros(3)
     
     for spin in spinvalues:
@@ -286,14 +271,9 @@ def update_flux(lattice, indices, nref):
 
 def get_cubes(lat_dic, flipcoord):
     """
-    Calculate the cubes the flipped spincoordinate belongs to
+    Calculate the cubes the flipped spincoordinate belongs to.
     """
-    cubes =[]
-    for keys in lat_dic.keys():
-        coords, spins, _ = lat_dic[keys]
-        if flipcoord in coords:
-            cubes += [keys]
-    return cubes
+    return [key for key, (coords, _, _) in lat_dic.items() if flipcoord in coords]
 
 
 def get_cone(lat_coords, spinvalues, flipcoord, nref, L, eps=0.01):
@@ -384,14 +364,21 @@ def metropolis_step(lattice, nref, J, acceptance, E):
         acceptance[0] += 1
         return E
 
-    
+
+
 def MCS(L, nref, J, n_steps):
+    start_time = datetime.now()
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
-    lattice = initial_lattice(L, nref)
+    lattice = initial_lattice(L)
     E = energy(lattice, J)
+    t1 = datetime.now()
+    print('time taken to initalize lattice = {}'.format(t1-start_time))
     for i in range(n_steps):
         print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
+        t2 = datetime.now()
         E = metropolis_step(lattice, nref, J, acceptance, E)
+        end = datetime.now()
+        print('time taken for this step = {}'.format(end-t2))
 
     E = energy(lattice, J)
     m = magnetization(lattice)
