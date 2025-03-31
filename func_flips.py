@@ -348,14 +348,14 @@ def metropolis_step(lattice, nref, J, acceptance, E):
             #If the Metropolis step is accepted we only still need to flip the dictionary value
             flip_dic(lat_dic, flipcoord, cone)
             acceptance[2] += 1
+            return E-E_removed+E_added 
         
         else:
             #If the Metropolis step is not accepted we need to flip the spinvalue and flux back to the old values
             spinvalues[lat_coords.index(flipcoord)] = OG
             for cube in cubes: update_flux(lattice, cube, nref)
             acceptance[1] += 1
-            
-        return E-E_removed+E_added  
+            return E
       
     else:
         #If the hedgehog constrained is not accepted we need to flip the spinvalue and flux back to the old values
@@ -363,7 +363,6 @@ def metropolis_step(lattice, nref, J, acceptance, E):
         for cube in cubes: update_flux(lattice, cube, nref)
         acceptance[0] += 1
         return E
-
 
 
 def MCS(L, nref, J, n_steps):
@@ -374,7 +373,6 @@ def MCS(L, nref, J, n_steps):
         print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
         E = metropolis_step(lattice, nref, J, acceptance, E)
       
-    
     E = energy(lattice, J)
     m = magnetization(lattice)
     return E,m, acceptance
