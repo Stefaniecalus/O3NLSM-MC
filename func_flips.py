@@ -367,19 +367,14 @@ def metropolis_step(lattice, nref, J, acceptance, E):
 
 
 def MCS(L, nref, J, n_steps):
-    start_time = datetime.now()
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
     lattice = initial_lattice(L)
     E = energy(lattice, J)
-    t1 = datetime.now()
-    print('time taken to initalize lattice = {}'.format(t1-start_time))
     for i in range(n_steps):
         print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
-        t2 = datetime.now()
         E = metropolis_step(lattice, nref, J, acceptance, E)
-        end = datetime.now()
-        print('time taken for this step = {}'.format(end-t2))
-
+      
+    
     E = energy(lattice, J)
     m = magnetization(lattice)
     return E,m, acceptance
