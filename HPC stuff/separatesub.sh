@@ -40,7 +40,7 @@ extract_line() {
 
 
 # Loop over all lines in the parameter csv file
-NUM_LINES=$(($(wc -l < test_values.csv) - 1))
+NUM_LINES=$(($(wc -l < mcvalues.csv) - 1))
 
 for i in $(seq 1 $NUM_LINES); do
     echo "Submitting job for parameter values $i"

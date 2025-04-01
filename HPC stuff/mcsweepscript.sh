@@ -1,4 +1,10 @@
 #!/bin/bash
+#PBS -m a
+#PBS -l walltime=60:00:00
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=16GB
+#PBS -o $VSC_DATA/Lisa/Sweep/Output/stdout.$PBS_JOBID
+#PBS -e $VSC_DATA/Lisa/Sweep/Error/stderr.$PBS_JOBID
 
 # Check if the 'venv' directory exists
 if [ -d "venv" ]; then
@@ -16,9 +22,12 @@ fi
 # load Python module
 module load Python
 
+export I_MPI_COMPATIBILITY=1
 
 # install requirements into virtual environment
 pip install -r requirements.txt
 
 # run the Python script
-python --project=. single_mcsweep.py 
+echo "Job started at : "`date`
+python --project=. single_mcsweep.py --L $L --J $J --nsteps $nsteps
+echo "Job ended at : "`date`
