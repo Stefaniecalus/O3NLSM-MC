@@ -2,7 +2,7 @@ import numpy as np
 
 # number of spins in lattice
 # 1225 2673 4961 8281 12825 18785
-Ls = [(6,1225),(8,2673),(10,4961),(12,8281)]
+Ls = [(6,1225),(8,2673),(10,4961),(12,8281),(14,12825),(16,18785)]
 
 
 Js = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1, 1.3, 1.5, 1.7]
@@ -14,7 +14,7 @@ for (L, nspins) in Ls:
         data.append((L, J, nspins*steps_per_spin))
 
 data
-np.savetxt("HPC stuff/data.csv", data, delimiter=",", header="L,J", fmt="%d,%0.1f")
+np.savetxt("HPC stuff/mcvalues.csv", data, delimiter=",", header="L,J,nsteps", fmt="%d,%0.1f,%d")
 
 
 from func_flips import *
@@ -32,7 +32,7 @@ def time_estim(steps=1000, L=6, J=0.5):
     return (end-start)/steps
 
 times = []
-for L in [6, 8, 10, 12]:
+for L in [14, 16]:
     print(L)
     times.append(time_estim(steps=1000, L=L, J=0.5))
 times
