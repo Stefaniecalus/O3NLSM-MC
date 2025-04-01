@@ -13,17 +13,18 @@ parser.add_argument("-L", '--L', type=int, required=True, const=6, nargs="?")
 parser.add_argument("-J", '--J', type=float, required=True, const=0.3, nargs="?")
 parser.add_argument("-nsteps", '--nsteps', type=int, required=True, const=10000, nargs="?")
 
-args = parser.parse_args("--L --J --n_steps".split())
+args = parser.parse_args()
 
 L = args.L
 J = args.J
 nsteps = args.nsteps
+print(L, J, nsteps)
 
 ##################################################################
 # run the simulation
 ##################################################################
-
-E, m, acceptance = MCS(L, J, nsteps)
+nref = vec()
+E, m, acceptance = MCS(L, nref, J, nsteps)
 
 # write out data
 E,m,acceptance = np.float64(-349.2040644852037),np.float64(0.7518431151459216),[50,1000,23]
