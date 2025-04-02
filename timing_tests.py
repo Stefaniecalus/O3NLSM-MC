@@ -35,9 +35,9 @@ def time_estim(steps=1000, L=6, J=0.5):
     return (end-start)/steps
 
 times = []
-for L in [14, 16]:
+for L in [6,8,10,12,14, 16]:
     print(L)
-    times.append(time_estim(steps=1000, L=L, J=0.5))
+    times.append(time_estim(steps=500, L=L, J=0.5))
 times
 np.array(times)*1000
 
@@ -143,3 +143,18 @@ for i in range(steps):
     E_added = change_energy(lattice, flipcoord, J)
 end = time.time()
 print((end-start)/steps)
+
+# magnetization test
+L=16
+lattice = initial_lattice(L)
+steps = 1000000
+Mlist = np.zeros(steps)
+
+start = time.time()
+t = 60
+t_end = time.time() + t
+while time.time() < t_end: # run for t seconds
+    for i in range(steps):
+        Mlist[i] = magnetization(lattice)
+end = time.time()
+print((end-start)/np.count_nonzero(Mlist))
