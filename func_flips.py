@@ -224,7 +224,7 @@ def magnetization(lattice):
     for spin in spinvalues:
         M += np.array(spin)
     
-    return np.linalg.norm(M)/len(spinvalues)
+    return np.linalg.norm(M)
 
 
 def check_isolation(lat_dic, indices):
@@ -378,14 +378,15 @@ def metropolis_step(lattice, nref, J, acceptance, E):
         return E
 
 
-def MCS(L, nref, J, n_steps):
+def MCS(L, nref, J, n_steps, n_th):
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
+    M = np.zeros(len(n_steps)-len(n_th))
     lattice = initial_lattice(L)
     E = energy(lattice, J)
     for i in range(n_steps):
-        print("Step {i} of {n_steps}".format(i=i, n_steps=n_steps))
         E = metropolis_step(lattice, nref, J, acceptance, E)
+        if i >= n_th:
+            M[i-n_th] = magnetization(lattice)
       
     E = energy(lattice, J)
-    m = magnetization(lattice)
-    return E,m, acceptance
+    return E, M, acceptance
