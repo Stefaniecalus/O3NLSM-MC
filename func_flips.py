@@ -387,6 +387,5 @@ def MCS(L, nref, J, n_steps, n_th):
         E = metropolis_step(lattice, nref, J, acceptance, E)
         if i >= n_th:
             M[i-n_th] = magnetization(lattice)
-      
-    E = energy(lattice, J)
+    #FIXME: if you want to evaluate energy, you need to do the same as magnetisation
     return E, M, acceptance
