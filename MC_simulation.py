@@ -2,10 +2,12 @@ from func_flips import *
 #from func_rot import * 
 
 #Do simulations
-L = 16
+L = 6
+nspin = 1225
 nref = vec()
-J_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-n_steps = 1
+J_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4]
+n_steps = 10
+n_th = n_steps//2
 magnetizations = []
 energies = []
 accept = 0
@@ -17,9 +19,10 @@ start_time = datetime.now()
 for index, J in enumerate(J_values):
     t1 = datetime.now()
     print("index = {}, J = {}".format(index, J))
-    E, m, acceptance = MCS(L, nref, J, n_steps)
+    E, M, acceptance = MCS(L, nref, J, n_steps, n_th)
+    print(M)
     energies += [E]
-    magnetizations += [m]
+    magnetizations += [np.sum(M)/(n_th*nspin)] 
     
     #add the acceptance and decline rates: 
     # 0 means no constraint met, 1 means hedgehog constraint met, 2 means hedgehog and energy constraint met

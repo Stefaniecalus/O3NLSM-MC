@@ -380,7 +380,7 @@ def metropolis_step(lattice, nref, J, acceptance, E):
 
 def MCS(L, nref, J, n_steps, n_th):
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
-    M = np.zeros(len(n_steps)-len(n_th))
+    M = np.zeros(n_steps-n_th)
     lattice = initial_lattice(L)
     E = energy(lattice, J)
     for i in range(n_steps):
