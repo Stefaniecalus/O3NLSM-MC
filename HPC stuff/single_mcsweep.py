@@ -12,19 +12,24 @@ parser = argparse.ArgumentParser(prog="single_mcsweep.py",
 parser.add_argument("-L", '--L', type=int, required=True, const=6, nargs="?")
 parser.add_argument("-J", '--J', type=float, required=True, const=0.3, nargs="?")
 parser.add_argument("-nsteps", '--nsteps', type=int, required=True, const=10000, nargs="?")
+parser.add_argument("-nth", '--nth', type=int, required=True, const=5000, nargs="?")
+parser.add_argument("-nspin", '--nspin', type=int, required=True, const=1225, args="?")
 
 args = parser.parse_args()
 
 L = args.L
 J = args.J
 nsteps = args.nsteps
+nth = args.nth
+nspin = args.nspin
 print(L, J, nsteps)
 
 ##################################################################
 # run the simulation
 ##################################################################
 nref = vec()
-E, m, acceptance = MCS(L, nref, J, nsteps)
+E, M, acceptance = MCS(L, nref, J, nsteps, nth)
+m = np.sum(M)/(nth*nspin)
 
 # write out data
 E,m,acceptance = np.float64(-349.2040644852037),np.float64(0.7518431151459216),[50,1000,23]
