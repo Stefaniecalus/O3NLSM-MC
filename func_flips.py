@@ -327,6 +327,44 @@ def change_energy(lattice, flipcoord, J):
 
     return -J * energy
 
+def chirality_z(lattice, L, nref):
+    lat_dict, latcoords, spinvalues = lattice
+    #Czz(r) =  [Czz(1), Czz(2), ... ,Czz(L)]
+    Czz = np.zeros(L-1)
+ 
+    #First choose a z=1 cube as reference Fz(0)
+    for i, j in product(range(L), range(L)):
+        zero = get_sides((i, j, 0))
+        Fv = flux_side(latcoords, spinvalues, zero[6], nref)
+        #Now calculate Fz(r) for all r along the z-axis for this reference cube
+        for k in range(1, L):
+            r = get_sides((i,j,k))
+            Fmu = flux_side(latcoords, spinvalues, r[6], nref)
+            #Add the chirality-chirality correlation to the Czz(r) vector based on r
+            Czz[k-1] += np.sin(Fv) * np.sin(Fmu)
+    
+    #return the mean value of all correlations per r
+    return [C/(L**2) for C in Czz]
+
+
+def chirality_y(lattice, L, nref):
+    lat_dict, latcoords, spinvalues = lattice
+    #Cyy(r) =  [Cyy(1), Cyy(2), ... ,Cyy(L)]
+    Cyy = np.zeros(L-1)
+ 
+    #First choose a y=1 cube as reference Fy(0)
+    for i, j in product(range(L), range(L)):
+        zero = get_sides((i, j, 0))
+        Fv = flux_side(latcoords, spinvalues, zero[2], nref)
+        #Now calculate Fz(r) for all r along the z-axis for this reference cube
+        for k in range(1, L):
+            r = get_sides((i,j,k))
+            Fmu = flux_side(latcoords, spinvalues, r[2], nref)
+            #Add the chirality-chirality correlation to the Czz(r) vector based on r
+            Cyy[k-1] += np.sin(Fv) * np.sin(Fmu)
+    
+    #return the mean value of all correlations per r
+    return [C/(L**2) for C in Cyy]
 
 #Now we set up the Metropolis step algorithm for our MCS
 def metropolis_step(lattice, nref, J, acceptance, E):
@@ -380,12 +418,12 @@ def metropolis_step(lattice, nref, J, acceptance, E):
 
 def MCS(L, nref, J, n_steps, n_th):
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
-    M = np.zeros(n_steps-n_th)
+    E, M = np.zeros(n_steps-n_th), np.zeros(n_steps-n_th)
     lattice = initial_lattice(L)
-    E = energy(lattice, J)
+    e = energy(lattice, J)
     for i in range(n_steps):
-        E = metropolis_step(lattice, nref, J, acceptance, E)
+        e = metropolis_step(lattice, nref, J, acceptance, e)
         if i >= n_th:
             M[i-n_th] = magnetization(lattice)
-    #FIXME: if you want to evaluate energy, you need to do the same as magnetisation
+            E[i-n_th] = e
     return E, M, acceptance
