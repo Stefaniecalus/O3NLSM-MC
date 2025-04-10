@@ -335,16 +335,16 @@ def chirality_z(lattice, L, nref):
     #First choose a z=1 cube as reference Fz(0)
     for i, j in product(range(L), range(L)):
         zero = get_sides((i, j, 0))
-        Fv = flux_side(latcoords, spinvalues, zero[6], nref)
+        Fv = flux_side(latcoords, spinvalues, zero[4], nref)
         #Now calculate Fz(r) for all r along the z-axis for this reference cube
         for k in range(1, L):
             r = get_sides((i,j,k))
-            Fmu = flux_side(latcoords, spinvalues, r[6], nref)
+            Fmu = flux_side(latcoords, spinvalues, r[4], nref)
             #Add the chirality-chirality correlation to the Czz(r) vector based on r
             Czz[k-1] += np.sin(Fv) * np.sin(Fmu)
     
     #return the mean value of all correlations per r
-    return [C/(L**2) for C in Czz]
+    return Czz
 
 
 def chirality_y(lattice, L, nref):
@@ -355,16 +355,17 @@ def chirality_y(lattice, L, nref):
     #First choose a y=1 cube as reference Fy(0)
     for i, j in product(range(L), range(L)):
         zero = get_sides((i, j, 0))
-        Fv = flux_side(latcoords, spinvalues, zero[2], nref)
+        Fv = flux_side(latcoords, spinvalues, zero[4], nref)
         #Now calculate Fz(r) for all r along the z-axis for this reference cube
         for k in range(1, L):
             r = get_sides((i,j,k))
-            Fmu = flux_side(latcoords, spinvalues, r[2], nref)
+            Fmu = flux_side(latcoords, spinvalues, r[4], nref)
             #Add the chirality-chirality correlation to the Czz(r) vector based on r
             Cyy[k-1] += np.sin(Fv) * np.sin(Fmu)
     
     #return the mean value of all correlations per r
-    return [C/(L**2) for C in Cyy]
+    return Cyy
+
 
 #Now we set up the Metropolis step algorithm for our MCS
 def metropolis_step(lattice, nref, J, acceptance, E):

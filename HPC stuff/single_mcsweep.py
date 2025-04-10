@@ -35,14 +35,18 @@ E_av = np.mean(E)
 M_av_squared = np.mean(M**2)
 E_av_squared = np.mean(E**2)
 M_av_quartic = np.mean(M**4)
+E_av_quartic = np.mean(E**4)
 binder_cumulant = M_av_quartic / (M_av_squared**2) 
+binder_E = E_av_quartic / (E_av_squared**2)
 m_density = M_av / (nspin)
+m_var_dens = M_av_squared / (nspin)
 E_density = E_av / (nspin)
+E_var_dens = E_av_squared / (nspin)
 E_last = E[-1] 
 
 # write out data
-data = np.array([E_last, m_density, binder_cumulant, acceptance[0], acceptance[1], acceptance[2]])
+data = np.array([E_last, E_density, E_var_dens, m_density, m_var_dens, binder_cumulant, binder_E, acceptance[0], acceptance[1], acceptance[2]])
 print(data)
 reshaped_data = data.reshape(1, data.shape[0])
-formatter = "%1f %1f %1f %d %d %d"
+formatter = "%1f %1f %1f %1f %1f %1f %1f %d %d %d"
 np.savetxt("mcoutput.txt", reshaped_data, fmt=formatter)
