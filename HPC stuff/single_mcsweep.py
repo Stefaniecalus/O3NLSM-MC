@@ -22,13 +22,14 @@ J = args.J
 nsteps = args.nsteps
 nth = args.nth
 nspin = args.nspin
-print(L, J, nsteps)
+print(L, J, nsteps, nth, nspin)
 
 ##################################################################
 # run the simulation
 ##################################################################
 nref = vec()
 E, M, acceptance = MCS(L, nref, J, nsteps, nth)
+# E/M will be 112 + 8*(nsteps-nth) bytes each
 M_av = np.mean(M)
 E_av = np.mean(E)
 M_av_squared = np.mean(M**2)
@@ -40,9 +41,8 @@ E_density = E_av / (nspin)
 E_last = E[-1] 
 
 # write out data
-E,m_density,acceptance = np.float64(-349.2040644852037),np.float64(0.7518431151459216),[50,1000,23]
-binder_cumulant = np.float64(1.5226894958649473)
 data = np.array([E_last, m_density, binder_cumulant, acceptance[0], acceptance[1], acceptance[2]])
+print(data)
 reshaped_data = data.reshape(1, data.shape[0])
 formatter = "%1f %1f %1f %d %d %d"
-np.savetxt("HPC stuff/test_output.txt", reshaped_data, fmt=formatter)
+np.savetxt("mcoutput.txt", reshaped_data, fmt=formatter)
