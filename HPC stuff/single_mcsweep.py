@@ -1,5 +1,6 @@
 from func_flips import *
 import argparse
+from pathlib import Path
 
 ###################################################################
 # load the data from the csv file
@@ -48,4 +49,14 @@ data = np.array([E_last, m_density, m_var_dens, binder_cumulant, binder_E, accep
 print(data)
 reshaped_data = data.reshape(1, data.shape[0])
 formatter = "%1f %1f %1f %1f %1f %d %d %d"
-np.savetxt("mcoutput.txt", reshaped_data, fmt=formatter)
+savepath = Path("Data", "L{L}_J{J}.txt".format(L=L,J=J))
+np.savetxt(savepath, reshaped_data, fmt=formatter)
+
+# test
+# data = np.array([np.float64(123.321), np.float64(0.123), np.float64(0.456), np.float64(0.789), np.float64(0.012), 1, 2, 3])
+# reshaped_data = data.reshape(1, data.shape[0])
+# formatter = "%1f %1f %1f %1f %1f %d %d %d"
+# L=16
+# J=1.0
+# savepath = Path("test", "L{L}_J{J}.txt".format(L=L,J=J))
+# np.savetxt(savepath, reshaped_data, fmt=formatter)
