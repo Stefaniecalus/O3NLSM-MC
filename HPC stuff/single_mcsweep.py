@@ -14,28 +14,29 @@ parser.add_argument("-J", '--J', type=float, required=True, const=0.3, nargs="?"
 parser.add_argument("-nsteps", '--nsteps', type=int, required=True, const=10000, nargs="?")
 parser.add_argument("-nth", '--nth', type=int, required=True, const=5000, nargs="?")
 parser.add_argument("-nspin", '--nspin', type=int, required=True, const=1225, args="?")
+parser.add_argument("-n", '--n', type=int, required=True, const=100, nargs="?")
 
 args = parser.parse_args()
-
 L = args.L
 J = args.J
 nsteps = args.nsteps
 nth = args.nth
 nspin = args.nspin
-print(L, J, nsteps, nth, nspin)
+n = args.n
+print(L, J, nsteps, nth, nspin, n)
 
 ##################################################################
 # run the simulation
 ##################################################################
 nref = vec()
-E, M, acceptance = MCS(L, nref, J, nsteps, nth)
+E, M, acceptance = MCS(L, nref, J, nsteps, nth, n)
 # E/M will be 112 + 8*(nsteps-nth) bytes each
-M_av = np.mean(M)
-E_av = np.mean(E)
-M_av_squared = np.mean(M**2)
-E_av_squared = np.mean(E**2)
-M_av_quartic = np.mean(M**4)
-E_av_quartic = np.mean(E**4)
+M_av = np.sum(M)/nth
+E_av = np.sum(E)/nth
+M_av_squared = np.sum(M**2)/nth
+E_av_squared = np.sum(E**2)/nth
+M_av_quartic = np.sum(M**4)/nth
+E_av_quartic = np.sum(E**4)/nth
 binder_cumulant = M_av_quartic / (M_av_squared**2) 
 binder_E = E_av_quartic / (E_av_squared**2)
 m_density = M_av / (nspin)

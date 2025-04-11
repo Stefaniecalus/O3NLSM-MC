@@ -417,14 +417,19 @@ def metropolis_step(lattice, nref, J, acceptance, E):
         return E
 
 
-def MCS(L, nref, J, n_steps, n_th):
+def MCS(L, nref, J, n_steps, n_th, n):
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
-    E, M = np.zeros(n_steps-n_th), np.zeros(n_steps-n_th)
+    E_intermediate, M_intermediate = np.zeros(n_steps-n_th), np.zeros(n_steps-n_th)
+    Nmem = n_th//n
+    E, M = np.zeros(n), np.zeros(n)
     lattice = initial_lattice(L)
     e = energy(lattice, J)
     for i in range(n_steps):
         e = metropolis_step(lattice, nref, J, acceptance, e)
         if i >= n_th:
-            M[i-n_th] = magnetization(lattice)
-            E[i-n_th] = e
+            E_intermediate[i-n_th] = e
+            M_intermediate[i-n_th] = magnetization(lattice)
+    for i in range(n):
+        E[i] = np.sum(E_intermediate[Nmem*i : (Nmem)*(i+1)])
+        M[i] = np.sum(M_intermediate[Nmem*i : (Nmem)*(i+1)])
     return E, M, acceptance

@@ -8,6 +8,7 @@ nref = vec()
 J_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4]
 n_steps = 10
 n_th = n_steps//2
+n = n_th//5
 magnetizations = []
 energies = []
 accept = 0
@@ -19,7 +20,7 @@ start_time = datetime.now()
 for index, J in enumerate(J_values):
     t1 = datetime.now()
     print("index = {}, J = {}".format(index, J))
-    E, M, acceptance = MCS(L, nref, J, n_steps, n_th)
+    E, M, acceptance = MCS(L, nref, J, n_steps, n_th, n)
     print(M)
     energies += [E]
     magnetizations += [np.sum(M)/(n_th*nspin)] 
