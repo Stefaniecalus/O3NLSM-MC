@@ -31,7 +31,7 @@ print(L, J, nsteps, nth, nspin, n)
 ##################################################################
 nref = vec()
 E, M, acceptance = MCS(L, nref, J, nsteps, nth, n)
-# E/M will be 112 + 8*(nsteps-nth) bytes each
+# E/M will be 112 + 8*n bytes each
 M_av = np.sum(M)/nth
 E_av = np.sum(E)/nth
 M_av_squared = np.sum(M**2)/nth
