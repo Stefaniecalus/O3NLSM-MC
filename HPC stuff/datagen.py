@@ -13,4 +13,4 @@ for (L, nspins) in Ls:
         data.append((L, J, nspins*steps_per_spin, nth, nspins, n))
 
 data
-np.savetxt("HPC stuff/mcvalues.csv", data, delimiter=",", header="L,J,nsteps,nth,nspins,n", fmt="%d,%0.1f,%d,%d,%d,%d",comments="")
+np.savetxt("HPC stuff/mcvalues.csv", data, delimiter=",", header="L,J,nsteps,nth,nspin,n", fmt="%d,%0.1f,%d,%d,%d,%d",comments="")
