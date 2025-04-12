@@ -24,6 +24,9 @@ module load Python
 
 export I_MPI_COMPATIBILITY=1
 
+# Move to proper working directory
+cd $PBS_O_WORKDIR
+
 # install requirements into virtual environment
 pip install -r requirements.txt
 
