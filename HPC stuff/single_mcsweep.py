@@ -34,14 +34,13 @@ print(L, J, nsteps, nth, nspin, n, file)
 ##################################################################
 #new_lattice, new_latcoords, new_spins, nlast = get_from_file(file)
 #lattice = new_lattice, new_latcoords, new_spins
-lattice = np.nan #for the first simulation
 nlast = nsteps #for the first simulation
 
 ##################################################################
 # run the simulation
 ##################################################################
 nref = vec()
-E, M, acceptance, lattice_out = MCS(L, nref, J, nsteps, nth, n, lattice)
+E, M, acceptance, lattice_out = MCS(L, nref, J, nsteps, nth, n, 0)
 # E/M will be 112 + 8*n bytes each
 
 # The calculation below only need to happen when the system is thermalized 
