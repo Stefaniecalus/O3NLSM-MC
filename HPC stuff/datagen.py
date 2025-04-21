@@ -3,8 +3,7 @@ from sys import getsizeof
 # number of spins in lattice
 Ls = [(6,1225),(8,2673),(10,4961),(12,8281),(14,12825),(16,18785)]
 Js = np.linspace(0.0, 1.4, 15, endpoint=True, dtype=float)
-steps_per_spin = 5000
-nlast = 0 #this will be the amount of steps_per_spin in total from all simulations done (e.g. two sims of 50 gives nlast = 100)
+steps_per_spin = 100
 n = 100 # split calculating averages and such into n parts
 
 data = []

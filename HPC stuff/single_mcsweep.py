@@ -32,8 +32,10 @@ print(L, J, nsteps, nth, nspin, n, file)
 ##################################################################
 # Get data from file: only happens after first simulation!
 ##################################################################
-new_lattice, new_latcoords, new_spins, nlast = get_from_file(file)
-lattice = new_lattice, new_latcoords, new_spins
+#new_lattice, new_latcoords, new_spins, nlast = get_from_file(file)
+#lattice = new_lattice, new_latcoords, new_spins
+lattice = np.nan #for the first simulation
+nlast = nsteps #for the first simulation
 
 ##################################################################
 # run the simulation
@@ -41,18 +43,19 @@ lattice = new_lattice, new_latcoords, new_spins
 nref = vec()
 E, M, acceptance, lattice_out = MCS(L, nref, J, nsteps, nth, n, lattice)
 # E/M will be 112 + 8*n bytes each
+
 # The calculation below only need to happen when the system is thermalized 
-M_av = np.sum(M)/nth
-E_av = np.sum(E)/nth
-M_av_squared = np.sum(M**2)/nth
-E_av_squared = np.sum(E**2)/nth
-M_av_quartic = np.sum(M**4)/nth
-E_av_quartic = np.sum(E**4)/nth
-binder_cumulant = M_av_quartic / (M_av_squared**2) 
-binder_E = E_av_quartic / (E_av_squared**2)
-m_density = M_av / (nspin)
-m_var_dens = M_av_squared / (nspin)
-E_last = E[-1] 
+#M_av = np.sum(M)/nth
+#E_av = np.sum(E)/nth
+#M_av_squared = np.sum(M**2)/nth
+#E_av_squared = np.sum(E**2)/nth
+#M_av_quartic = np.sum(M**4)/nth
+#E_av_quartic = np.sum(E**4)/nth
+#binder_cumulant = M_av_quartic / (M_av_squared**2) 
+#binder_E = E_av_quartic / (E_av_squared**2)
+#m_density = M_av / (nspin)
+#m_var_dens = M_av_squared / (nspin)
+#E_last = E[-1] 
 
 ##################################################################
 # Write out data to file
@@ -61,12 +64,12 @@ write_to_file(lattice_out, nlast, file)
 
 
 # write out data
-data = np.array([lattice_out, E_last, m_density, m_var_dens, binder_cumulant, binder_E, acceptance[0], acceptance[1], acceptance[2]])
-print(data)
-reshaped_data = data.reshape(1, data.shape[0])
-formatter = " %s %1f %1f %1f %1f %1f %1f %1f %d %d %d"
-savepath = Path("Data", "L{L}_J{J}_n{last}.txt".format(L=L,J=J,last=nlast + nsteps))
-np.savetxt(savepath, reshaped_data, fmt=formatter)
+#data = np.array([lattice_out, E_last, m_density, m_var_dens, binder_cumulant, binder_E, acceptance[0], acceptance[1], acceptance[2]])
+#print(data)
+#reshaped_data = data.reshape(1, data.shape[0])
+#formatter = " %s %1f %1f %1f %1f %1f %1f %1f %d %d %d"
+#savepath = Path("Data", "L{L}_J{J}_n{last}.txt".format(L=L,J=J,last=nlast + nsteps))
+#np.savetxt(savepath, reshaped_data, fmt=formatter)
 
 # test
 # data = np.array([np.float64(123.321), np.float64(0.123), np.float64(0.456), np.float64(0.789), np.float64(0.012), 1, 2, 3])
