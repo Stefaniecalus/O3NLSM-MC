@@ -14,7 +14,7 @@ parser.add_argument("-L", '--L', type=int, required=True, const=6, nargs="?")
 parser.add_argument("-J", '--J', type=float, required=True, const=0.3, nargs="?")
 parser.add_argument("-nsteps", '--nsteps', type=int, required=True, const=5000, nargs="?")
 parser.add_argument("-nth", '--nth', type=int, required=True, const=5000, nargs="?")
-parser.add_argument("-nspin", '--nspin', type=int, required=True, const=1225, args="?")
+parser.add_argument("-nspin", '--nspin', type=int, required=True, const=1225, nargs="?")
 parser.add_argument("-n", '--n', type=int, required=True, const=100, nargs="?")
 parser.add_argument("-file", '--file', type=str, required=True, nargs="?")
 
