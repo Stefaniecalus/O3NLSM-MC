@@ -8,7 +8,7 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(prog="single_mcsweep.py",
                                  description="Run a single MC simulation sweep with specified parameters.",
-                                 epilog="Example usage: python single_mcsweep.py -L 16 -J 0.5 -n_steps 10000 -file L16_J0.5.txt")
+                                 epilog="Example usage: python single_mcsweep.py -L 16 -J 0.5 -n_steps 10000")
 
 parser.add_argument("-L", '--L', type=int, required=True, const=6, nargs="?")
 parser.add_argument("-J", '--J', type=float, required=True, const=0.3, nargs="?")
@@ -61,10 +61,10 @@ write_to_file(lattice_out, nlast, file)
 
 
 # write out data
-data = np.array([lattice_out, E_last, m_density, m_var_dens, binder_cumulant, binder_E, acceptance[0], acceptance[1], acceptance[2]])
+data = np.array([E_last, m_density, m_var_dens, binder_cumulant, binder_E, acceptance[0], acceptance[1], acceptance[2]])
 print(data)
 reshaped_data = data.reshape(1, data.shape[0])
-formatter = " %s %1f %1f %1f %1f %1f %1f %1f %d %d %d"
+formatter = " %1f %1f %1f %1f %1f %1f %1f %d %d %d"
 savepath = Path("Data", "L{L}_J{J}_n{last}.txt".format(L=L,J=J,last=nlast + nsteps))
 np.savetxt(savepath, reshaped_data, fmt=formatter)
 

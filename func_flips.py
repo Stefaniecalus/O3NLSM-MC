@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime 
 from itertools import product
 from math import ceil
+import re
+import ast
+
 
 #Some functions that help initialize our lattice
 def vec():
@@ -417,15 +420,53 @@ def metropolis_step(lattice, nref, J, acceptance, E):
         return E
 
 
-def MCS(L, nref, J, n_steps, n_th, n):
+def MCS(L, nref, J, n_steps, n_th, n, file=np.nan):
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
     Nmem = n_th//n
     E, M = np.zeros(n), np.zeros(n)
-    lattice = initial_lattice(L)
+    if file==np.nan:
+        lattice = initial_lattice(L)
     e = energy(lattice, J)
     for i in range(n_steps):
         e = metropolis_step(lattice, nref, J, acceptance, e)
-        if i >= n_th:
+        if i > n_th:
             E[(i-n_th)//Nmem] += e
             M[(i-n_th)//Nmem] += magnetization(lattice)
-    return E, M, acceptance
+    return E, M, acceptance, lattice
+
+
+# The following functions help us read out and write out our data
+def write_to_file(lattice_out, n_last, filename):
+    lattice, latcoords, spinvalues = lattice_out
+    with open(filename, 'w') as input:
+        input.write(f'{n_last} \n')
+        for key in lattice:
+            input.write(f'{key}?{lattice[key][0]}?{lattice[key][1]}?{lattice[key][2]}\n')
+        input.write(f'{latcoords} \n')
+        input.write(f'{spinvalues}')
+
+
+def get_from_file(filename):
+    with open(filename, 'r') as input:
+        lines = input.readlines()
+
+    new_n = 0  
+    new_lattice = {}
+    new_spins = []
+    new_latcoords = []  
+    for e, line in enumerate(lines):
+        if e == 0:
+            new_n = int(line)
+        elif e == len(lines) - 1:
+            new_spins = ast.literal_eval(line.split(' \n')[0])
+        elif e == len(lines) - 2:
+            new_latcoords = ast.literal_eval(line.split(' \n')[0])
+        else:
+            parts = line.split(' \n')[0].split('?')
+            indice = ast.literal_eval(parts[0])
+            coords = ast.literal_eval(parts[1])
+            spins = ast.literal_eval(parts[2])
+            flux = float(ast.literal_eval(parts[3]))
+            new_lattice.update({indice: [coords, spins, flux]})
+    
+    return new_lattice, new_latcoords, new_spins, new_n

@@ -32,5 +32,5 @@ pip install -r requirements.txt
 
 # run the Python script
 echo "Job started at : "`date`
-python single_mcsweep.py --L $L --J $J --nsteps $nsteps --nth $nth --nspin $nspin --n $n
+python single_mcsweep.py --L $L --J $J --nsteps $nsteps --nth $nth --nspin $nspin --n $n --file $file
 echo "Job ended at : "`date`
