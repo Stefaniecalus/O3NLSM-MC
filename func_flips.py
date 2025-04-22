@@ -1,12 +1,11 @@
 #import packages
 import numpy as np
 import random
-import matplotlib.pyplot as plt
-from datetime import datetime 
 from itertools import product
 from math import ceil
-import re
+from collections import deque
 import pickle
+from datetime import datetime
 
 
 #Some functions that help initialize our lattice
@@ -66,7 +65,7 @@ def spin_neighbours(coord, L):
         return [(x,y+0.5,z), (x,y-0.5,z)]
     if int(x) != x:
         return [(x+0.5,y,z), (x-0.5,y,z)]
-    
+
     # spins on the cube edges have six neighbors
     neighbors += ([(x + 0.5,y,z), (x - 0.5,y,z)] if 0 < x < L else [(0,y,z), (x - 0.5,y,z)] if x == L else [(x + 0.5,y,z), (L,y,z)] if x == 0 else [])
 
@@ -330,6 +329,7 @@ def change_energy(lattice, flipcoord, J):
 
     return -J * energy
 
+
 def chirality_z(lattice, L, nref):
     lat_dict, latcoords, spinvalues = lattice
     #Czz(r) =  [Czz(1), Czz(2), ... ,Czz(L)]
@@ -435,6 +435,61 @@ def MCS(L, nref, J, n_steps, n_th, n, lattice_input=0):
             E[(i-n_th)//Nmem] += e
             M[(i-n_th)//Nmem] += magnetization(lattice)
     return E, M, acceptance, lattice
+
+
+def hedgehog_constraint(lattice, flipcoord, nref):
+    lat_dic, lat_coords, spinvalues = lattice
+
+    #Keep original value of flipcoord for later use
+    OG = spinvalues[lat_coords.index(flipcoord)]
+
+    #Define cone to give the flipped value a little nudge to avoid singularities if necessary 
+    cone = get_cone(lat_coords, spinvalues, flipcoord, nref, len(lat_dic)**(1/3))
+    flip_values(lat_coords, spinvalues, flipcoord, cone)
+    newvalue = spinvalues[lat_coords.index(flipcoord)]
+
+    #look to which cube this spin belongs to
+    cubes = get_cubes(lat_dic, flipcoord)
+    
+    #first look if this new configuration respects the hedgehog constraint
+    checks = []
+    for cube in cubes:
+        update_flux(lattice, cube, nref)
+        checks += [check_isolation(lat_dic, cube)]
+    return checks, OG, newvalue
+
+
+def cluster_check(nbr_OG, OG, eps):
+    #these two vectors are either arrays or tuples so we wil write a general way to write if they are similar
+    nbr_x, nbr_y, nbr_z = nbr_OG
+    og_x, og_y, og_z = OG
+    return (abs(nbr_x-og_x) < eps) * (abs(nbr_y -og_y) < eps) * (abs(nbr_z - og_z) < eps)
+
+
+#Now we set up the Wolff cluster algorithm for our MCS
+def Wolff_cluster(lattice, nref, J, acceptance):
+    lat_dic, lat_coords, spinvalues = lattice
+    L = len(lat_dic)**(1/3)
+    p_add = 1 - np.exp(-2*J)
+    
+    #Pick random coord from lat_coords to flip to start the cluster on
+    flipcoord = random.choice(lat_coords)
+    checks, OG, newvalue = hedgehog_constraint(lattice, flipcoord, nref)
+
+    if np.sum(checks)==len(checks):
+    #if the hedgehog constraint is respected, start forming the cluster which must also respect the hedgehog constraint for every spin added
+        unvisited = deque([flipcoord]) #use a deque to efficiently track the unvisited cluster sites
+        while unvisited: #while unvisited sites remain
+            clustercoord = unvisited.pop()  #take one and remove from the unvisited list
+            for nbr in spin_neighbours(clustercoord, L):
+                nbr = tuple([ceil_half_int(x) for x in nbr])
+                nbr_check, nbr_OG, nbr_new = hedgehog_constraint(lattice, nbr, nref)
+                if np.sum(nbr_check)==len(nbr_check) and cluster_check(nbr_OG, OG, 1e-2) and np.random.rand() >= p_add: 
+                    unvisited.appendleft(nbr)
+                else:
+                    spinvalues[lat_coords.index(nbr)] = nbr_OG
+    else:
+        spinvalues[lat_coords.index(flipcoord)] = OG
 
 
 # The following functions help us read out and write out our data
