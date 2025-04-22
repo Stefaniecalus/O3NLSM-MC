@@ -5,6 +5,7 @@ from itertools import product
 from math import ceil
 from collections import deque
 import pickle
+import matplotlib.pyplot as plt
 from datetime import datetime
 
 
@@ -437,14 +438,17 @@ def MCS(L, nref, J, n_steps, n_th, n, lattice_input=0):
     return E, M, acceptance, lattice
 
 
-def hedgehog_constraint(lattice, flipcoord, nref):
+def hedgehog_constraint(lattice, flipcoord, nref, cone_in):
     lat_dic, lat_coords, spinvalues = lattice
 
     #Keep original value of flipcoord for later use
     OG = spinvalues[lat_coords.index(flipcoord)]
 
     #Define cone to give the flipped value a little nudge to avoid singularities if necessary 
-    cone = get_cone(lat_coords, spinvalues, flipcoord, nref, len(lat_dic)**(1/3))
+    if cone_in == None:
+        cone = get_cone(lat_coords, spinvalues, flipcoord, nref, len(lat_dic)**(1/3))
+    else:
+        cone = cone_in
     flip_values(lat_coords, spinvalues, flipcoord, cone)
     newvalue = spinvalues[lat_coords.index(flipcoord)]
 
@@ -456,7 +460,7 @@ def hedgehog_constraint(lattice, flipcoord, nref):
     for cube in cubes:
         update_flux(lattice, cube, nref)
         checks += [check_isolation(lat_dic, cube)]
-    return checks, OG, newvalue
+    return checks, OG, newvalue, cone
 
 
 def cluster_check(nbr_OG, OG, eps):
@@ -474,7 +478,7 @@ def Wolff_cluster(lattice, nref, J, acceptance):
     
     #Pick random coord from lat_coords to flip to start the cluster on
     flipcoord = random.choice(lat_coords)
-    checks, OG, newvalue = hedgehog_constraint(lattice, flipcoord, nref)
+    checks, OG, newvalue, cone = hedgehog_constraint(lattice, flipcoord, nref, None)
 
     if np.sum(checks)==len(checks):
     #if the hedgehog constraint is respected, start forming the cluster which must also respect the hedgehog constraint for every spin added
@@ -483,7 +487,7 @@ def Wolff_cluster(lattice, nref, J, acceptance):
             clustercoord = unvisited.pop()  #take one and remove from the unvisited list
             for nbr in spin_neighbours(clustercoord, L):
                 nbr = tuple([ceil_half_int(x) for x in nbr])
-                nbr_check, nbr_OG, nbr_new = hedgehog_constraint(lattice, nbr, nref)
+                nbr_check, nbr_OG, nbr_new, _ = hedgehog_constraint(lattice, nbr, nref, cone)
                 if np.sum(nbr_check)==len(nbr_check) and cluster_check(nbr_OG, OG, 1e-2) and np.random.rand() >= p_add: 
                     unvisited.appendleft(nbr)
                 else:
