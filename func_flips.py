@@ -6,7 +6,7 @@ from datetime import datetime
 from itertools import product
 from math import ceil
 import re
-import ast
+import pickle
 
 
 #Some functions that help initialize our lattice
@@ -438,37 +438,26 @@ def MCS(L, nref, J, n_steps, n_th, n, lattice_input=0):
 
 
 # The following functions help us read out and write out our data
-def write_to_file(lattice_out, n_last, filename):
-    lattice, latcoords, spinvalues = lattice_out
-    with open(filename, 'w') as input:
-        input.write(f'{n_last} \n')
-        for key in lattice:
-            input.write(f'{key}?{lattice[key][0]}?{lattice[key][1]}?{lattice[key][2]}\n')
-        input.write(f'{latcoords} \n')
-        input.write(f'{spinvalues}')
+def write_to_file(lattice_out, nlast, filename):
+    lattice, latcoords, spins = lattice_out
+    data = {
+        'lattice': lattice,
+        'latcoords': latcoords,
+        'spins': spins,
+        'n': nlast
+    }
+    with open(filename, 'wb') as f:
+        pickle.dump(data, f)
 
-
+    
 def get_from_file(filename):
-    with open(filename, 'r') as input:
-        lines = input.readlines()
-
-    new_n = 0  
-    new_lattice = {}
-    new_spins = []
-    new_latcoords = []  
-    for e, line in enumerate(lines):
-        if e == 0:
-            new_n = int(line)
-        elif e == len(lines) - 1:
-            new_spins = ast.literal_eval(line.split(' \n')[0])
-        elif e == len(lines) - 2:
-            new_latcoords = ast.literal_eval(line.split(' \n')[0])
-        else:
-            parts = line.split(' \n')[0].split('?')
-            indice = ast.literal_eval(parts[0])
-            coords = ast.literal_eval(parts[1])
-            spins = ast.literal_eval(parts[2])
-            flux = float(ast.literal_eval(parts[3]))
-            new_lattice.update({indice: [coords, spins, flux]})
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    
+    # Expecting a dict with keys: 'lattice', 'latcoords', 'spins', 'n'
+    new_lattice = data['lattice']
+    new_latcoords = data['latcoords']
+    new_spins = data['spins']
+    new_n = data['n']
     
     return new_lattice, new_latcoords, new_spins, new_n
