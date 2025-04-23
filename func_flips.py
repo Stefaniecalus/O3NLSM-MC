@@ -471,29 +471,48 @@ def cluster_check(nbr_OG, OG, eps):
 
 
 #Now we set up the Wolff cluster algorithm for our MCS
-def Wolff_cluster(lattice, nref, J, acceptance):
+def Wolff_cluster(lattice, nref, J):
     lat_dic, lat_coords, spinvalues = lattice
     L = len(lat_dic)**(1/3)
-    p_add = 1 - np.exp(-2*J)
-    
+    p_add = np.exp(-2*J)
+    cluster_size = np.zeros(1)
     #Pick random coord from lat_coords to flip to start the cluster on
     flipcoord = random.choice(lat_coords)
     checks, OG, newvalue, cone = hedgehog_constraint(lattice, flipcoord, nref, None)
 
     if np.sum(checks)==len(checks):
     #if the hedgehog constraint is respected, start forming the cluster which must also respect the hedgehog constraint for every spin added
+        cluster_size[0] += 1
         unvisited = deque([flipcoord]) #use a deque to efficiently track the unvisited cluster sites
         while unvisited: #while unvisited sites remain
             clustercoord = unvisited.pop()  #take one and remove from the unvisited list
             for nbr in spin_neighbours(clustercoord, L):
                 nbr = tuple([ceil_half_int(x) for x in nbr])
                 nbr_check, nbr_OG, nbr_new, _ = hedgehog_constraint(lattice, nbr, nref, cone)
-                if np.sum(nbr_check)==len(nbr_check) and cluster_check(nbr_OG, OG, 1e-2) and np.random.rand() >= p_add: 
+                if np.sum(nbr_check)==len(nbr_check) and cluster_check(nbr_OG, OG, 1e-2) and np.random.rand() < p_add: 
+                    cluster_size[0] += 1
                     unvisited.appendleft(nbr)
                 else:
                     spinvalues[lat_coords.index(nbr)] = nbr_OG
     else:
         spinvalues[lat_coords.index(flipcoord)] = OG
+
+        return cluster_size
+
+
+def WCS(L, nref, J, nsteps, nth, n, lattice_input=0):
+    Nmem = nth//n
+    M = np.zeros(n)
+    if lattice_input==0:
+        lattice = initial_lattice(L)
+    else:
+        lattice = lattice_input
+    e = energy(lattice, J)
+    for i in range(nsteps):
+        clustersize = Wolff_cluster(lattice, nref, J)
+        if i > nth:
+            M[(i-nth)//Nmem] += magnetization(lattice)
+    return M, lattice
 
 
 # The following functions help us read out and write out our data
