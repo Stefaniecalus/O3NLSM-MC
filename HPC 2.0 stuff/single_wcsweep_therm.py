@@ -8,7 +8,7 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(prog="single_wcsweep.py",
                                  description="Run a single WC simulation sweep with specified parameters.",
-                                 epilog="Example usage: python single_wcsweep.py -L 16 -J 0.5 -n_steps 10000")
+                                 epilog="Example usage: python single_wcsweep.py -L 16 -J 0.5 -n_steps 10000 -file WCL16_J0.5.txt")
 
 parser.add_argument("-L", '--L', type=int, required=True, const=6, nargs="?")
 parser.add_argument("-J", '--J', type=float, required=True, const=0.3, nargs="?")
@@ -65,7 +65,7 @@ data = np.array([E_last, m_density, m_var_dens, binder_cumulant])
 print(data)
 reshaped_data = data.reshape(1, data.shape[0])
 formatter = " %1f %1f %1f %1f"
-savepath = Path("Data", "L{L}_J{J}_n{last}.txt".format(L=L,J=J,last=nlast + nsteps))
+savepath = Path("Data", "WCL{L}_J{J}_n{last}.txt".format(L=L,J=J,last=nlast + nsteps))
 np.savetxt(savepath, reshaped_data, fmt=formatter)
 
 # test
