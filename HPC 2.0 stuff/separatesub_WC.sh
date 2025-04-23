@@ -44,6 +44,6 @@ NUM_LINES=$(($(wc -l < mcvalues.csv) - 1))
 
 for i in $(seq 1 $NUM_LINES); do
     echo "Submitting job for parameter values $i"
-    extract_line mcvalues.csv $(($i + 1))
+    extract_line wcvalues.csv $(($i + 1))
     qsub -N "wcsweep_$i" -V wcsweepscript.sh 
 done
