@@ -296,10 +296,9 @@ def get_cone(lat_coords, spinvalues, flipcoord, nref, L, eps=0.01):
     
     #If any value in A is 'nan' then we will need to construct a cone around our spin-flip 
     if np.isnan(A).any():
-        dx = random.choice([-eps, 0, eps])
-        dy = random.choice([-eps, 0, eps])
         flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0]) #We return the coneless spinflip to its orignal value 
-        return [dx, dy, 0]
+        theta = 2* np.pi * random.random()
+        return [eps*np.cos(theta), eps*np.sin(theta), 0]
     
     else: 
         flip_values(lat_coords, spinvalues, flipcoord, [0, 0, 0]) #We return the coneless spinflip to its orignal value
@@ -331,49 +330,70 @@ def change_energy(lattice, flipcoord, J):
     return -J * energy
 
 
-def chirality_z(lattice, L, nref):
-    lat_dict, latcoords, spinvalues = lattice
-    #Czz(r) =  [Czz(1), Czz(2), ... ,Czz(L)]
-    Czz = np.zeros(L-1)
- 
-    #First choose a z=1 cube as reference Fz(0)
-    for i, j in product(range(L), range(L)):
-        zero = get_sides((i, j, 0))
-        Fv = flux_side(latcoords, spinvalues, zero[4], nref)
-        #Now calculate Fz(r) for all r along the z-axis for this reference cube
-        for k in range(1, L):
-            r = get_sides((i,j,k))
-            Fmu = flux_side(latcoords, spinvalues, r[4], nref)
-            #Add the chirality-chirality correlation to the Czz(r) vector based on r
-            Czz[k-1] += np.sin(Fv) * np.sin(Fmu)
-    
-    #return the mean value of all correlations per r
-    return Czz
+def loop_nn_strong(cube, L):
+    i,j,k = cube
 
+    neighbors = [
+        (i - 1, j, k), (i + 1, j, k),  # x neighbors
+        (i, j - 1, k), (i, j + 1, k),  # y neighbors
+        (i, j, k - 1), (i, j, k + 1),  # z neighbors
+        (i - 1, j - 1, k), (i + 1, j - 1, k), (i - 1, j + 1, k), (i + 1, j + 1, k), #xy neighbours 
+        (i - 1, j, k -1), (i + 1, j, k - 1), (i - 1, j, k + 1), (i + 1, j, k + 1), #xz neighbours 
+        (i, j - 1, k - 1), (i, j - 1, k + 1), (i, j + 1, k - 1), (i, j + 1, k + 1), #yz neighbours
+        (i + 1, j + 1, k + 1), (i + 1, j + 1, k - 1), (i + 1, j - 1, k + 1), (i + 1, j - 1, k - 1),
+        (i - 1, j + 1, k + 1), (i - 1, j + 1, k - 1), (i - 1, j - 1, k + 1), (i - 1, j - 1, k - 1) #corners of loop
+        ]
+    return list(set([(int(ni%L), int(nj%L), int(nk%L)) for ni, nj, nk in neighbors]))
 
-def chirality_y(lattice, L, nref):
-    lat_dict, latcoords, spinvalues = lattice
-    #Cyy(r) =  [Cyy(1), Cyy(2), ... ,Cyy(L)]
-    Cyy = np.zeros(L-1)
- 
-    #First choose a y=1 cube as reference Fy(0)
-    for i, j in product(range(L), range(L)):
-        zero = get_sides((i, j, 0))
-        Fv = flux_side(latcoords, spinvalues, zero[4], nref)
-        #Now calculate Fz(r) for all r along the z-axis for this reference cube
-        for k in range(1, L):
-            r = get_sides((i,j,k))
-            Fmu = flux_side(latcoords, spinvalues, r[4], nref)
-            #Add the chirality-chirality correlation to the Czz(r) vector based on r
-            Cyy[k-1] += np.sin(Fv) * np.sin(Fmu)
+def check_nn(cube1, cube2, L):
+    neighbours1 = get_neighbors(cube1, L)
+    return cube2 in neighbours1
+
+def loop(lat_dic, cube1, cube2, L):
+    loop = list(loop_nn_strong(cube1, L) + loop_nn_strong(cube2, L))
+    loop_fluxes = np.zeros(len(loop))
+    for i,cubes in enumerate(loop):
+        loop_fluxes[i] = lat_dic[cubes][2]
     
-    #return the mean value of all correlations per r
-    return Cyy
+    return np.all(loop_fluxes < 1e-10)
+
+def check_hedgehog(lattice, flipcoord, nref, L):
+    lat_dic, lat_coords, spinvalues = lattice
+    cubes = get_cubes(lat_dic, flipcoord)
+    fluxes = np.zeros(len(cubes))
+
+    #Fill in array with new fluxes of all cubes impacted by the flip of flipcoord
+    for i, cube in enumerate(cubes):
+        update_flux(lattice, cube, nref)
+        fluxes[i] = lat_dic[cube][2]
+    
+    #Check wether these create a monopole or not
+    #If all fluxes are zero then there are no monopoles created so there is no problem 
+    if not fluxes.any():
+        return True
+    
+    #If all fluxes sum to zero and there are only two nonzero values we have to check wether these are nn and isolated
+    elif np.sum(fluxes) == 0 and np.count_nonzero(fluxes) == 2:
+        #Get the indices of the nonzero elements in fluxes to retreive the cubes in which the monopoles lie
+        indices = np.nonzero(fluxes)[0]
+        cube1 = cubes[indices[0]]
+        cube2 = cubes[indices[1]]
+        
+        #check if these cubes are nearest neighbours and if all surrounding cubes do not contain monopoles
+        if check_nn(cube1, cube2, L) and loop(lat_dic, cube1, cube2, L):
+            return True
+        else:
+            return False
+        
+    #For all other cases there is no way we created none or isolated monopoles
+    else:
+        return False
 
 
 #Now we set up the Metropolis step algorithm for our MCS
 def metropolis_step(lattice, nref, J, acceptance, E):
     lat_dic, lat_coords, spinvalues = lattice
+    L = len(lat_dic)**(1/3)
     
     #Pick random coord from lat_coords to flip 
     flipcoord = random.choice(lat_coords)
@@ -391,12 +411,7 @@ def metropolis_step(lattice, nref, J, acceptance, E):
     cubes = get_cubes(lat_dic, flipcoord)
     
     #first look if this new configuration respects the hedgehog constraint
-    checks = []
-    for cube in cubes:
-        update_flux(lattice, cube, nref)
-        checks += [check_isolation(lat_dic, cube)]
-      
-    if np.sum(checks)==len(checks):
+    if check_hedgehog(lattice, flipcoord, nref, L):
         #if the first contraint is respected now calculate the probability of acception
         dE = E_added-E_removed
 
@@ -438,7 +453,7 @@ def MCS(L, nref, J, n_steps, n_th, n, lattice_input=0):
     return E, M, acceptance, lattice
 
 
-def hedgehog_constraint(lattice, flipcoord, nref, cone_in):
+def hedgehog_constraint(lattice, flipcoord, nref, L, cone_in):
     lat_dic, lat_coords, spinvalues = lattice
 
     #Keep original value of flipcoord for later use
@@ -449,17 +464,13 @@ def hedgehog_constraint(lattice, flipcoord, nref, cone_in):
         cone = get_cone(lat_coords, spinvalues, flipcoord, nref, len(lat_dic)**(1/3))
     else:
         cone = cone_in
+    
     flip_values(lat_coords, spinvalues, flipcoord, cone)
     newvalue = spinvalues[lat_coords.index(flipcoord)]
 
-    #look to which cube this spin belongs to
-    cubes = get_cubes(lat_dic, flipcoord)
+    checks = check_hedgehog(lattice, flipcoord, nref, L)
     
-    #first look if this new configuration respects the hedgehog constraint
-    checks = []
-    for cube in cubes:
-        update_flux(lattice, cube, nref)
-        checks += [check_isolation(lat_dic, cube)]
+    #now switch everyhting back to how it was
     return checks, OG, newvalue, cone
 
 
@@ -478,9 +489,9 @@ def Wolff_cluster(lattice, nref, J):
     cluster_size = np.zeros(1)
     #Pick random coord from lat_coords to flip to start the cluster on
     flipcoord = random.choice(lat_coords)
-    checks, OG, newvalue, cone = hedgehog_constraint(lattice, flipcoord, nref, None)
+    checks, OG, newvalue, cone = hedgehog_constraint(lattice, flipcoord, nref, L, None)
 
-    if np.sum(checks)==len(checks):
+    if checks:
     #if the hedgehog constraint is respected, start forming the cluster which must also respect the hedgehog constraint for every spin added
         cluster_size[0] += 1
         unvisited = deque([flipcoord]) #use a deque to efficiently track the unvisited cluster sites
@@ -488,16 +499,24 @@ def Wolff_cluster(lattice, nref, J):
             clustercoord = unvisited.pop()  #take one and remove from the unvisited list
             for nbr in spin_neighbours(clustercoord, L):
                 nbr = tuple([ceil_half_int(x) for x in nbr])
-                nbr_check, nbr_OG, nbr_new, _ = hedgehog_constraint(lattice, nbr, nref, cone)
-                if np.sum(nbr_check)==len(nbr_check) and cluster_check(nbr_OG, OG, 1e-2) and np.random.rand() < p_add: 
+                nbr_check, nbr_OG, nbr_new, _ = hedgehog_constraint(lattice, nbr, nref, L, cone)
+                if nbr_check and cluster_check(nbr_OG, OG, 1e-2) and np.random.rand() < p_add: 
                     cluster_size[0] += 1
                     unvisited.appendleft(nbr)
                 else:
                     spinvalues[lat_coords.index(nbr)] = nbr_OG
+                    cubes = get_cubes(lat_dic, nbr)
+                    for cube in cubes:
+                        update_flux(lattice, cube, nref)
+    
     else:
+    #if the constrained is not respecpted we need to flip everything back
         spinvalues[lat_coords.index(flipcoord)] = OG
+        cubes = get_cubes(lat_dic, flipcoord)
+        for cube in cubes:
+            update_flux(lattice, cube, nref)
 
-        return cluster_size
+    return cluster_size
 
 
 def WCS(L, nref, J, nsteps, nth, n, lattice_input=0):
