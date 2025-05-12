@@ -558,3 +558,9 @@ def get_from_file(filename):
     new_n = data['n']
     
     return new_lattice, new_latcoords, new_spins, new_n
+
+def keys_to_matrix(lattice, L):
+    fluxes = np.zeros((L, L, L))
+    for keys in lattice.keys():
+        fluxes[keys] = lattice[keys][2]
+    return fluxes
