@@ -351,11 +351,13 @@ def check_nn(cube1, cube2, L):
 
 def loop(lat_dic, cube1, cube2, L):
     loop = list(loop_nn_strong(cube1, L) + loop_nn_strong(cube2, L))
+    loop.remove(cube1)
+    loop.remove(cube2)
     loop_fluxes = np.zeros(len(loop))
     for i,cubes in enumerate(loop):
         loop_fluxes[i] = lat_dic[cubes][2]
     
-    return np.all(loop_fluxes < 1e-10)
+    return np.all(np.abs(loop_fluxes) < 1e-10)
 
 def check_hedgehog(lattice, flipcoord, nref, L):
     lat_dic, lat_coords, spinvalues = lattice
@@ -369,11 +371,11 @@ def check_hedgehog(lattice, flipcoord, nref, L):
     
     #Check wether these create a monopole or not
     #If all fluxes are zero then there are no monopoles created so there is no problem 
-    if not fluxes.any():
+    if np.all(np.abs(fluxes) < 1e-10):
         return True
     
     #If all fluxes sum to zero and there are only two nonzero values we have to check wether these are nn and isolated
-    elif np.sum(fluxes) == 0 and np.count_nonzero(fluxes) == 2:
+    elif np.abs(np.sum(fluxes)) < 1e-10 and np.count_nonzero(fluxes) == 2:
         #Get the indices of the nonzero elements in fluxes to retreive the cubes in which the monopoles lie
         indices = np.nonzero(fluxes)[0]
         cube1 = cubes[indices[0]]
