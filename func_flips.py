@@ -490,7 +490,7 @@ def metropolis_step(lattice, nref, J, acceptance, E, pairs):
     
 
 
-def MCS(L, nref, J, n_steps, n_th, n, lattice_input=0):
+def MCS(L, nref, J, pairs, n_steps, n_th, n, lattice_input=0):
     acceptance = [0,0,0] # hedgehog constraint denied, energy constraint denied, energy constraint accepted
     Nmem = n_th//n
     E, M = np.zeros(n), np.zeros(n)
@@ -500,14 +500,14 @@ def MCS(L, nref, J, n_steps, n_th, n, lattice_input=0):
         lattice = lattice_input
     e = energy(lattice, J)
     for i in range(n_steps):
-        e = metropolis_step(lattice, nref, J, acceptance, e)
+        e, pairs = metropolis_step(lattice, nref, J, acceptance, e, pairs)
         if i > n_th:
             E[(i-n_th)//Nmem] += e
             M[(i-n_th)//Nmem] += magnetization(lattice)
-    return E, M, acceptance, lattice
+    return E, M, pairs, acceptance, lattice
 
 
-def hedgehog_constraint(lattice, flipcoord, nref, L, cone_in):
+def hedgehog_constraint(lattice, flipcoord, nref, L, cone_in, pairs):
     lat_dic, lat_coords, spinvalues = lattice
 
     #Keep original value of flipcoord for later use
@@ -522,7 +522,7 @@ def hedgehog_constraint(lattice, flipcoord, nref, L, cone_in):
     flip_values(lat_coords, spinvalues, flipcoord, cone)
     newvalue = spinvalues[lat_coords.index(flipcoord)]
 
-    checks = check_hedgehog(lattice, flipcoord, nref, L)
+    checks = check_hedgehog(lattice, flipcoord, nref, L, pairs)
     
     #now switch everyhting back to how it was
     return checks, OG, newvalue, cone
@@ -584,7 +584,7 @@ def Wolff_cluster(lattice, nref, J, pairs):
     return cluster_size, pairs
 
 
-def WCS(L, nref, J, nsteps, nth, n, lattice_input=0):
+def WCS(L, nref, J, pairs, nsteps, nth, n, lattice_input=0):
     Nmem = nth//n
     M = np.zeros(n)
     if lattice_input==0:
@@ -593,20 +593,21 @@ def WCS(L, nref, J, nsteps, nth, n, lattice_input=0):
         lattice = lattice_input
     e = energy(lattice, J)
     for i in range(nsteps):
-        clustersize = Wolff_cluster(lattice, nref, J)
+        clustersize, pairs = Wolff_cluster(lattice, nref, J, pairs)
         if i > nth:
             M[(i-nth)//Nmem] += magnetization(lattice)
-    return M, lattice
+    return M, pairs, lattice
 
 
 # The following functions help us read out and write out our data
-def write_to_file(lattice_out, nlast, filename):
+def write_to_file(lattice_out, nlast, pairs, filename):
     lattice, latcoords, spins = lattice_out
     data = {
         'lattice': lattice,
         'latcoords': latcoords,
         'spins': spins,
-        'n': nlast
+        'n': nlast,
+        'pairs': pairs
     }
     with open(filename, 'wb') as f:
         pickle.dump(data, f)
@@ -616,13 +617,14 @@ def get_from_file(filename):
     with open(filename, 'rb') as f:
         data = pickle.load(f)
     
-    # Expecting a dict with keys: 'lattice', 'latcoords', 'spins', 'n'
+    # Expecting a dict with keys: 'lattice', 'latcoords', 'spins', 'n', 'pairs
     new_lattice = data['lattice']
     new_latcoords = data['latcoords']
     new_spins = data['spins']
     new_n = data['n']
+    new_pairs = data['pairs']
     
-    return new_lattice, new_latcoords, new_spins, new_n
+    return new_lattice, new_latcoords, new_spins, new_n, new_pairs
 
 def keys_to_matrix(lattice, L):
     fluxes = np.zeros((L, L, L))
